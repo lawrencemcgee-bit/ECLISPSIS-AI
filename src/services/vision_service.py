@@ -1,9 +1,9 @@
 """
-Vision service placeholder.
-Milestone 1: no camera access — only structure.
+Vision service placeholder for Milestone 1.
+No camera access — only structure.
 """
 
 class VisionService:
     def capture(self):
-        pass
+        return "vision_capture_placeholder"
 
