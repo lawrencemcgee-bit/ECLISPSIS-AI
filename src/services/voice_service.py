@@ -1,12 +1,13 @@
 """
-Voice service placeholder.
-Milestone 1: no microphone access — only structure.
+Voice service placeholder for Milestone 1.
+No microphone access — only structure.
 """
 
 class VoiceService:
     def start_listening(self):
-        pass
+        return "voice_listening_started"
 
     def stop_listening(self):
-        pass
+        return "voice_listening_stopped"
+
 
