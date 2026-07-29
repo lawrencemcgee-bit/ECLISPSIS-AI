@@ -9,6 +9,13 @@ from src.core.task_service import TaskService
 from src.core.memory_service import MemoryService
 from src.core.permission_service import PermissionService
 from src.core.event_bus import EventBus
+from src.services.onenote_service import OneNoteService
+from src.services.weather_service import WeatherService
+from src.services.news_service import NewsService
+from src.agents.onenote_agent import OneNoteAgent
+from src.agents.weather_agent import WeatherAgent
+from src.agents.news_agent import NewsAgent
+
 
 class AssistantCore:
     def __init__(self):
