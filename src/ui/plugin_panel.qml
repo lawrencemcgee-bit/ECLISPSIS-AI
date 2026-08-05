@@ -1,9 +1,8 @@
 """
 AssistantCore orchestrates conversation, agents, tasks, memory, permissions,
 verification, tools, state transitions, persistence, logging, session restore,
-auto-backup, crash recovery, and multi-window persistence.
+auto-backup, crash recovery, multi-window persistence, and plugin execution.
 """
-from unittest import result
 
 from src.core.conversation_service import ConversationService
 from src.core.agent_router import AgentRouter
@@ -22,7 +21,6 @@ from src.core.user_profile_service import UserProfileService
 from src.core.session_state_service import SessionStateService
 from src.core.backup_service import BackupService
 from src.plugins.plugin_manager import PluginManager
-
 
 
 class AssistantCore:
@@ -44,7 +42,7 @@ class AssistantCore:
         # Backup system
         self.backups = BackupService()
 
-        # Plugin manager
+        # Plugin system
         self.plugins = PluginManager()
 
         # Logging
@@ -52,7 +50,8 @@ class AssistantCore:
         self.logger.info("startup", {
             "settings": self.settings,
             "profile": self.profile,
-            "session": self.session_state
+            "session": self.session_state,
+            "plugins": self.plugins.list_plugins()
         })
 
         # Multi-window defaults
@@ -95,20 +94,6 @@ class AssistantCore:
         self.agents.registry.register("news", NewsAgent(NewsService()))
 
         self.logger.info("agents.registered", {"agents": ["onenote", "weather", "news"]})
-
-    # ---------------------------------------------------------
-    # Plugin manager
-    #----------------------------------------------------------
-
-   def execute_plugins(self, plugin_id, payload):
-       result = self.plugins.execute_plugins(plugin_id, payload)
-       self.logger.info("execute_plugins", {"plugin_id": plugin_id, "payload": payload, "result": result})
-       return result
-   def list_plugins(self):
-          result = self.plugins.list_plugins()
-   def set_plugin_enabled(self, plugin_id, payload):
-       self.plugins.set_enabled(plugin_id, value)
-       self.logger.info("plugin.toggle",{"plugin": plugin_id, "enabled": value})
 
     # ---------------------------------------------------------
     # Tool Registration
@@ -166,6 +151,25 @@ class AssistantCore:
     def save_window_state(self, name, state):
         self.session_state["windows"][name] = state
         self.save_session()
+
+    # ---------------------------------------------------------
+    # Plugin System
+    # ---------------------------------------------------------
+    def execute_plugin(self, plugin_id, payload):
+        result = self.plugins.execute(plugin_id, payload)
+        self.logger.info("plugin.execute", {
+            "plugin": plugin_id,
+            "payload": payload,
+            "result": result
+        })
+        return result
+
+    def list_plugins(self):
+        return self.plugins.list_plugins()
+
+    def set_plugin_enabled(self, plugin_id, value):
+        self.plugins.set_enabled(plugin_id, value)
+        self.logger.info("plugin.toggle", {"plugin": plugin_id, "enabled": value})
 
     # ---------------------------------------------------------
     # Conversation Processing

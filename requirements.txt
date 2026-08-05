@@ -1,0 +1,38 @@
+# Core Python runtime
+python-dotenv
+requests
+aiohttp
+pydantic
+typing-extensions
+
+# Qt / UI
+PySide6==6.7.0
+
+# Audio + Waveform
+sounddevice
+numpy
+scipy
+
+# Agents / Services
+beautifulsoup4
+lxml
+feedparser
+
+# Persistence / Storage
+tinydb
+jsonschema
+
+# Logging
+loguru
+
+# Plugin System
+importlib-metadata
+importlib-resources
+
+# Tools / Utilities
+python-dateutil
+tzdata
+
+# Optional Enhancements (safe to include)
+markdown
+pyyaml

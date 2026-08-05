@@ -1,0 +1,6 @@
+{
+    "id": "example_plugin",
+    "name": "Example Plugin",
+    "entry": "ExamplePlugin",
+    "enabled": true
+}
