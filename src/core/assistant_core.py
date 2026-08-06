@@ -20,6 +20,9 @@ from src.core.user_profile_service import UserProfileService
 from src.core.session_state_service import SessionStateService
 from src.core.backup_service import BackupService
 from src.plugins.plugin_manager import PluginManager
+from src.services.vision_service import VisionService
+from src.services.voice_service import VoiceService
+from src.services.audio_service import AudioService
 
 
 
@@ -73,6 +76,21 @@ class AssistantCore:
         self.tools = ToolRegistry()
         self.state_manager = StateManager(self.events)
 
+        # Multimodal (Phase 6): previously VisionService/VoiceService were
+        # never constructed anywhere, and AudioService was owned directly by
+        # the UI layer (StateBridge), bypassing the event bus entirely —
+        # inconsistent with how every other subsystem here is owned. Still
+        # simulated/placeholder-level capture, same as before; only the
+        # ownership and event integration changed.
+        self.vision = VisionService()
+        self.voice = VoiceService()
+        self.audio = AudioService()
+        if self.settings.get("mic_enabled", False):
+            # Restored here now instead of in StateBridge's __init__, so
+            # audio state restoration happens alongside every other
+            # settings-driven restore that already happens at core startup.
+            self.audio.start()
+
         self._register_builtin_agents()
         self._register_builtin_tools()
 
@@ -109,6 +127,58 @@ class AssistantCore:
     def set_plugin_enabled(self, plugin_id, enabled):
         self.plugins.set_enabled(plugin_id, enabled)
         self.logger.info("plugin.toggle", {"plugin": plugin_id, "enabled": enabled})
+
+    # ---------------------------------------------------------
+    # Multimodal (Phase 6)
+    # ---------------------------------------------------------
+    def capture_vision(self):
+        result = self.vision.capture()
+        self.events.emit("vision.captured", {"result": result})
+        self.logger.info("vision.captured", {"result": result})
+        return result
+
+    def start_voice_listening(self):
+        changed = self.voice.start_listening()
+        if changed:
+            self.events.emit("voice.listening_started", {})
+        return self.voice.listening
+
+    def stop_voice_listening(self):
+        changed = self.voice.stop_listening()
+        if changed:
+            self.events.emit("voice.listening_stopped", {})
+        return self.voice.listening
+
+    def voice_command_received(self, text: str):
+        """Routes a recognized voice command through the same conversation
+        pipeline as typed messages — once real STT exists, it only needs to
+        call this method with the transcribed text; the rest of the
+        pipeline (verification, conversation processing, logging) is
+        already wired and tested via this path.
+        Mirrors the graceful-degradation pattern used for agents/tools/tasks:
+        rejects with a typed result instead of processing silently if voice
+        input wasn't actually active."""
+        if not self.voice.listening:
+            self.events.emit("voice.command_rejected", {"reason": "not_listening"})
+            return AssistantResult(content=None, metadata={"error": "not_listening"})
+        self.events.emit("voice.command_received", {"text": text})
+        return self.process_message(text)
+
+    def toggle_mic(self):
+        """Consolidates what StateBridge.toggleMic() used to do directly
+        (start/stop AudioService + persist the setting) into the core, so
+        the UI layer just asks for a state change instead of owning the
+        audio subsystem and the event flow itself."""
+        if not self.audio.active:
+            self.audio.start()
+            self.settings["mic_enabled"] = True
+            self.events.emit("audio.started", {})
+        else:
+            self.audio.stop()
+            self.settings["mic_enabled"] = False
+            self.events.emit("audio.stopped", {})
+        self.save_settings()
+        return self.audio.active
 
     # ---------------------------------------------------------
     # Tool Registration

@@ -1,6 +1,5 @@
 from PySide6.QtCore import QObject, Signal, Slot, Property, QAbstractListModel, QModelIndex, Qt
 from src.core.state import AssistantState
-from src.services.audio_service import AudioService
 import json
 
 class ChatModel(QAbstractListModel):
@@ -55,7 +54,9 @@ class StateBridge(QObject):
     def __init__(self, assistant):
         super().__init__()
         self.assistant = assistant
-        self.audio = AudioService()
+        # Phase 6: audio is now owned by AssistantCore (self.assistant.audio),
+        # not constructed here — StateBridge asks the core for state changes
+        # instead of owning the subsystem and its event flow directly.
         self.chatModel = ChatModel()
         self.current_agent = assistant.settings.get("last_agent", "onenote")
         self.waveform_counter = 0
@@ -82,9 +83,8 @@ class StateBridge(QObject):
             self.assistant.session_state["crashed"] = False
             self.assistant.save_session()
 
-        # Restore mic state
-        if assistant.settings.get("mic_enabled", False):
-            self.audio.start()
+        # Mic state is now restored by AssistantCore itself at startup
+        # (Phase 6) — no longer duplicated here.
 
     # ---------------------------------------------------------
     # Typing Indicator
@@ -167,26 +167,22 @@ class StateBridge(QObject):
     # ---------------------------------------------------------
     @Slot()
     def toggleMic(self):
-        if not self.audio.active:
-            self.audio.start()
-            self.assistant.settings["mic_enabled"] = True
+        active = self.assistant.toggle_mic()
+        if active:
             self.toastRequested.emit("Microphone enabled")
         else:
-            self.audio.stop()
-            self.assistant.settings["mic_enabled"] = False
             self.toastRequested.emit("Microphone disabled")
-        self.assistant.save_settings()
 
     @Slot()
     def updateWaveform(self):
-        if not self.audio.active:
+        if not self.assistant.audio.active:
             return
 
         self.waveform_counter += 1
         if self.waveform_counter % 3 != 0:
             return
 
-        samples = self.audio.get_samples()
+        samples = self.assistant.audio.get_samples()
         self.waveformUpdated.emit(samples)
 
     # ---------------------------------------------------------

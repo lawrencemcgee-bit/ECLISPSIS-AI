@@ -19,7 +19,12 @@ class LoggingService:
             os.makedirs(self.base_dir)
 
     def _timestamp(self):
-        return datetime.datetime.utcnow().isoformat() + "Z"
+        # Python 3.12+ deprecated datetime.utcnow() in favor of a
+        # timezone-aware call; utcnow() is slated for removal in a future
+        # Python version. isoformat() on an aware UTC datetime includes
+        # "+00:00" instead of a bare "Z", so it's stripped and appended
+        # explicitly to keep the exact same log format as before.
+        return datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "") + "Z"
 
     def log(self, level: str, event: str, payload: dict | None = None):
         entry = {
