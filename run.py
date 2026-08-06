@@ -9,24 +9,20 @@ from src.ui.qml_app import run_qml_ui
 
 def demo_agents(assistant: AssistantCore):
     print("\n=== Agent Demo ===")
+    # Phase 3: routed through assistant.agents.run() (AgentRouter) instead
+    # of calling agent methods directly, so the agent.invoked/completed
+    # events actually fire.
 
     # OneNote
-    assistant.agents.run(
-        "onenote",
-        action="write",
-        page="daily",
-        content="Today's notes: System boot successful.",
-    )
-    print(
-        "OneNote:", assistant.agents.run("onenote", action="open", page="daily").output
-    )
+    assistant.agents.run("onenote", action="write", page="daily",
+                          content="Today's notes: System boot successful.")
+    print("OneNote:", assistant.agents.run("onenote", action="open", page="daily").output)
 
     # Weather
     print("Weather:", assistant.agents.run("weather", location="San Antonio").output)
 
     # News
     print("News:", assistant.agents.run("news", category="technology").output)
-
 
 if __name__ == "__main__":
     assistant = AssistantCore()

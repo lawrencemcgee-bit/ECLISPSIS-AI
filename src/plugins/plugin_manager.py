@@ -9,7 +9,12 @@ import importlib.util
 
 class PluginManager:
     def __init__(self):
-        self.plugin_dir = os.path.join(os.getcwd(), "plugins")
+        # Phase 4: was os.path.join(os.getcwd(), "plugins"), which never
+        # matched where plugins actually live (src/plugins/<id>/) — cwd is
+        # wherever the process happens to be launched from, not the repo
+        # root. Resolved relative to this file's own location instead, so
+        # discovery no longer depends on launch directory.
+        self.plugin_dir = os.path.dirname(os.path.abspath(__file__))
         self.plugins = {}
         self._ensure_dirs()
         self.discover_plugins()

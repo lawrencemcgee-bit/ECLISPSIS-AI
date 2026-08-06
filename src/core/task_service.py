@@ -35,3 +35,10 @@ class TaskService:
         self.tasks[task_id]["status"] = "cancelled"
         self.events.emit("task.cancelled", {"task_id": task_id})
         return TaskResult(task_id=task_id, status="cancelled")
+
+    def fail_task(self, task_id: str, error: str):
+        if task_id not in self.tasks:
+            return TaskResult(task_id=task_id, status="unknown")
+        self.tasks[task_id]["status"] = "failed"
+        self.events.emit("task.failed", {"task_id": task_id, "error": error})
+        return TaskResult(task_id=task_id, status="failed", metadata={"error": error})

@@ -28,4 +28,3 @@ class OneNoteAgent:
         return AgentResult(agent="onenote", output=None,
                             metadata={"error": f"unknown action '{action}'"})
 
-

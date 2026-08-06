@@ -12,3 +12,7 @@ class NewsAgent:
         data = self.service.get_headlines(category)
         return AgentResult(agent="news", output=data)
 
+    def execute(self, **kwargs):
+        """Uniform entry point for AgentRegistry/AgentRouter dispatch."""
+        return self.get(kwargs.get("category", "general"))
+

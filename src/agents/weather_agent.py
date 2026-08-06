@@ -12,3 +12,7 @@ class WeatherAgent:
         data = self.service.get_weather(location)
         return AgentResult(agent="weather", output=data)
 
+    def execute(self, **kwargs):
+        """Uniform entry point for AgentRegistry/AgentRouter dispatch."""
+        return self.get(kwargs["location"])
+

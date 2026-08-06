@@ -18,3 +18,4 @@ class AgentRouter:
         else:
             self.events.emit("agent.completed", {"result": result})
         return result
+

@@ -19,6 +19,13 @@ class ToolRegistry:
         tool = self.get(name)
         if tool is None:
             return {"error": f"tool_not_found: {name}"}
-        return tool(*args, **kwargs)
+        try:
+            return tool(*args, **kwargs)
+        except Exception as exc:
+            # Graceful degradation (Engineering Charter §5), matching the
+            # same pattern applied to AgentRegistry.run() in Phase 3. No
+            # tool currently registered can raise, but this closes the gap
+            # before Phase 5+ starts registering real tools.
+            return {"error": str(exc)}
 
 

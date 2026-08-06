@@ -28,3 +28,4 @@ class AgentRegistry:
             # caller or leave the failure unreported.
             return AgentResult(agent=name, output=None, metadata={"error": str(exc)})
 
+
