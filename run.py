@@ -11,17 +11,22 @@ def demo_agents(assistant: AssistantCore):
     print("\n=== Agent Demo ===")
 
     # OneNote
-    onenote = assistant.agents.registry.get("onenote")
-    onenote.write("daily", "Today's notes: System boot successful.")
-    print("OneNote:", onenote.open("daily").output)
+    assistant.agents.run(
+        "onenote",
+        action="write",
+        page="daily",
+        content="Today's notes: System boot successful.",
+    )
+    print(
+        "OneNote:", assistant.agents.run("onenote", action="open", page="daily").output
+    )
 
     # Weather
-    weather = assistant.agents.registry.get("weather")
-    print("Weather:", weather.get("San Antonio").output)
+    print("Weather:", assistant.agents.run("weather", location="San Antonio").output)
 
     # News
-    news = assistant.agents.registry.get("news")
-    print("News:", news.get("technology").output)
+    print("News:", assistant.agents.run("news", category="technology").output)
+
 
 if __name__ == "__main__":
     assistant = AssistantCore()

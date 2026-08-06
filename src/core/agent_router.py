@@ -10,9 +10,11 @@ class AgentRouter:
         self.registry = AgentRegistry()
         self.events = events
 
-    def run(self, agent_name: str, *args, **kwargs):
+    def run(self, agent_name: str, **kwargs):
         self.events.emit("agent.invoked", {"agent": agent_name})
-        result = self.registry.run(agent_name, *args, **kwargs)
-        self.events.emit("agent.completed", {"result": result})
+        result = self.registry.run(agent_name, **kwargs)
+        if result.metadata and result.metadata.get("error"):
+            self.events.emit("agent.failed", {"agent": agent_name, "error": result.metadata["error"]})
+        else:
+            self.events.emit("agent.completed", {"result": result})
         return result
-

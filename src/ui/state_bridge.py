@@ -140,19 +140,24 @@ class StateBridge(QObject):
 
     @Slot()
     def runSelectedAgent(self):
-        agent = self.assistant.agents.registry.get(self.current_agent)
-        if not agent:
+        # Phase 3: routed through assistant.agents.run() (AgentRouter) so
+        # agent.invoked/completed/failed events fire, instead of calling
+        # agent methods directly.
+        agent_kwargs = {
+            "onenote": {"action": "open", "page": "daily"},
+            "weather": {"location": "San Antonio"},
+            "news": {"category": "technology"},
+        }.get(self.current_agent)
+
+        if agent_kwargs is None:
             self._push_chat("system", f"Unknown agent: {self.current_agent}")
             return
 
-        if self.current_agent == "onenote":
-            result = agent.open("daily").output
-        elif self.current_agent == "weather":
-            result = agent.get("San Antonio").output
-        elif self.current_agent == "news":
-            result = agent.get("technology").output
+        agent_result = self.assistant.agents.run(self.current_agent, **agent_kwargs)
+        if agent_result.metadata and agent_result.metadata.get("error"):
+            result = f"Agent error: {agent_result.metadata['error']}"
         else:
-            result = "Unknown agent."
+            result = agent_result.output
 
         self._push_chat(self.current_agent, str(result))
         self.outputUpdated.emit(str(result))

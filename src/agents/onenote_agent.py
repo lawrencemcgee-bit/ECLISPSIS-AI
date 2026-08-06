@@ -16,3 +16,16 @@ class OneNoteAgent:
         self.service.write_page(page, content)
         return AgentResult(agent="onenote", output=f"Page '{page}' updated.")
 
+    def execute(self, action: str, **kwargs):
+        """Uniform entry point for AgentRegistry/AgentRouter dispatch.
+        Delegates to the existing open()/write() methods — added in Phase 3
+        so agents can be routed through the registry generically without
+        changing their original per-agent methods."""
+        if action == "open":
+            return self.open(kwargs["page"])
+        if action == "write":
+            return self.write(kwargs["page"], kwargs["content"])
+        return AgentResult(agent="onenote", output=None,
+                            metadata={"error": f"unknown action '{action}'"})
+
+
