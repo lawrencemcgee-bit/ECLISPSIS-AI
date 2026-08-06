@@ -67,7 +67,7 @@ class AssistantCore:
         self.conversation = ConversationService(self.events)
         self.agents = AgentRouter(self.events)
         self.tasks = TaskService(self.events)
-        self.memory = MemoryService()
+        self.memory = MemoryService(self.persistence)
         self.permissions = PermissionService(self.events)
         self.verification = VerificationService(self.permissions)
         self.tools = ToolRegistry()

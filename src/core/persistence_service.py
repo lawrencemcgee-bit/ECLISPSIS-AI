@@ -1,5 +1,6 @@
 """
-PersistenceService handles saving/loading settings, chat history, and agent data.
+PersistenceService handles saving/loading settings, chat history, agent data,
+and long-term memory.
 Milestone 7: JSON-based persistence with safe defaults + window state.
 """
 
@@ -11,6 +12,7 @@ class PersistenceService:
         self.base_dir = os.path.join(os.getcwd(), "data")
         self.settings_path = os.path.join(self.base_dir, "settings.json")
         self.chat_path = os.path.join(self.base_dir, "chat_history.json")
+        self.memory_path = os.path.join(self.base_dir, "memory.json")
 
         self._ensure_dirs()
 
@@ -54,4 +56,17 @@ class PersistenceService:
     def save_chat_history(self, chat_list: list):
         with open(self.chat_path, "w") as f:
             json.dump(chat_list, f, indent=4)
+
+    # -----------------------------
+    # Long-Term Memory (Phase 5)
+    # -----------------------------
+    def load_memory(self):
+        if not os.path.exists(self.memory_path):
+            return {}
+        with open(self.memory_path, "r") as f:
+            return json.load(f)
+
+    def save_memory(self, memory: dict):
+        with open(self.memory_path, "w") as f:
+            json.dump(memory, f, indent=4)
 
