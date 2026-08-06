@@ -1,4 +1,4 @@
-ffrom PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QUrl
 import sys
@@ -7,11 +7,10 @@ import os
 from src.core.assistant_core import AssistantCore
 from src.ui.state_bridge import StateBridge
 
-def run_qml_ui():
+def run_qml_ui(assistant: AssistantCore):
     app = QGuiApplication(sys.argv)
     engine = QQmlApplicationEngine()
 
-    assistant = AssistantCore()
     bridge = StateBridge(assistant)
 
     assistant.events.on("state.changed",

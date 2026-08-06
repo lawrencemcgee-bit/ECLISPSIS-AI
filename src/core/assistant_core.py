@@ -3,8 +3,6 @@ AssistantCore orchestrates conversation, agents, tasks, memory, permissions,
 verification, tools, state transitions, persistence, logging, session restore,
 auto-backup, crash recovery, and multi-window persistence.
 """
-from unittest import result
-
 from src.core.conversation_service import ConversationService
 from src.core.agent_router import AgentRouter
 from src.core.task_service import TaskService
@@ -99,16 +97,18 @@ class AssistantCore:
     # ---------------------------------------------------------
     # Plugin manager
     #----------------------------------------------------------
+    def execute_plugins(self, plugin_id, payload):
+        result = self.plugins.execute(plugin_id, payload)
+        self.logger.info("execute_plugins", {"plugin_id": plugin_id, "payload": payload, "result": result})
+        return result
 
-   def execute_plugins(self, plugin_id, payload):
-       result = self.plugins.execute_plugins(plugin_id, payload)
-       self.logger.info("execute_plugins", {"plugin_id": plugin_id, "payload": payload, "result": result})
-       return result
-   def list_plugins(self):
-          result = self.plugins.list_plugins()
-   def set_plugin_enabled(self, plugin_id, payload):
-       self.plugins.set_enabled(plugin_id, value)
-       self.logger.info("plugin.toggle",{"plugin": plugin_id, "enabled": value})
+    def list_plugins(self):
+        result = self.plugins.list_plugins()
+        return result
+
+    def set_plugin_enabled(self, plugin_id, enabled):
+        self.plugins.set_enabled(plugin_id, enabled)
+        self.logger.info("plugin.toggle", {"plugin": plugin_id, "enabled": enabled})
 
     # ---------------------------------------------------------
     # Tool Registration

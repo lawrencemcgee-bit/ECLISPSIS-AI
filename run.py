@@ -33,7 +33,10 @@ if __name__ == "__main__":
     # Agent demo
     demo_agents(assistant)
 
-    # Launch QML UI
+    # Launch QML UI using the SAME assistant instance — not a second one.
+    # (Phase 2: previously qml_app.py constructed its own AssistantCore(),
+    # meaning the CLI demo above and the UI ran against two unrelated
+    # instances with separate settings/session/logging state.)
     print("Launching QML UI...")
-    run_qml_ui()
+    run_qml_ui(assistant)
 

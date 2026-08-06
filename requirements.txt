@@ -6,7 +6,7 @@ pydantic
 typing-extensions
 
 # Qt / UI
-PySide6==6.7.0
+PySide6==6.10.2
 
 # Audio + Waveform
 sounddevice
