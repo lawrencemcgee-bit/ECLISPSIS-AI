@@ -388,6 +388,46 @@ class Phase7Voice(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Phase 8 — NCI Analytics
+# ---------------------------------------------------------------------------
+class Phase8NCI(unittest.TestCase):
+    def test_nci_owned_by_core(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            self.assertIsNotNone(assistant.nci)
+
+    def test_analyze_fires_start_and_completed_events(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            fired = []
+            assistant.events.on("nci.analysis.started", lambda p: fired.append("started"))
+            assistant.events.on("nci.analysis.completed", lambda p: fired.append("completed"))
+
+            result = assistant.analyze("summarize my day")
+            self.assertEqual(result, {"interpreted": "summarize my day"})
+            self.assertEqual(fired, ["started", "completed"])
+
+    def test_analyze_not_wired_into_process_message(self):
+        """Deliberate design check, not just a behavior check: analyze()
+        must stay a standalone, explicitly-invoked capability. If a future
+        change accidentally wires it into process_message() without a
+        conscious decision, this test should be updated (not just broken
+        silently) to reflect that."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            fired = []
+            assistant.events.on("nci.analysis.started", lambda p: fired.append(1))
+
+            assistant.process_message("hello")
+            self.assertEqual(len(fired), 0,
+                              "process_message() should not trigger NCI analysis "
+                              "unless that integration is a deliberate, documented change")
+
+
+# ---------------------------------------------------------------------------
 # Dependency / environment checks
 # ---------------------------------------------------------------------------
 class DependencyChecks(unittest.TestCase):

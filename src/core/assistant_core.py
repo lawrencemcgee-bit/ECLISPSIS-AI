@@ -23,6 +23,7 @@ from src.plugins.plugin_manager import PluginManager
 from src.services.vision_service import VisionService
 from src.services.voice_service import VoiceService
 from src.services.audio_service import AudioService
+from src.services.nci_service import NCIService
 
 
 
@@ -85,6 +86,7 @@ class AssistantCore:
         self.vision = VisionService()
         self.voice = VoiceService()
         self.audio = AudioService()
+        self.nci = NCIService()
         if self.settings.get("mic_enabled", False):
             # Restored here now instead of in StateBridge's __init__, so
             # audio state restoration happens alongside every other
@@ -163,6 +165,22 @@ class AssistantCore:
             return AssistantResult(content=None, metadata={"error": "not_listening"})
         self.events.emit("voice.command_received", {"text": text})
         return self.process_message(text)
+
+    # ---------------------------------------------------------
+    # NCI Analytics (Phase 8)
+    # ---------------------------------------------------------
+    def analyze(self, text: str):
+        """Standalone, explicitly-invoked capability — not wired into
+        process_message() automatically. No specification exists yet for
+        what real analysis NCI should perform on every message, and
+        forcing it into that pipeline now would be inventing a design
+        decision rather than fixing a defect. Available for a future
+        caller (a UI panel, an automation phase) to invoke directly."""
+        self.events.emit("nci.analysis.started", {"text": text})
+        result = self.nci.interpret(text)
+        self.events.emit("nci.analysis.completed", {"result": result})
+        self.logger.info("nci.analysis.completed", {"result": result})
+        return result
 
     def toggle_mic(self):
         """Consolidates what StateBridge.toggleMic() used to do directly
