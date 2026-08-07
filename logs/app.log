@@ -1,0 +1,5 @@
+{"ts": "2026-08-07T03:41:07.993288Z", "level": "INFO", "event": "startup", "payload": {"settings": {"theme": "dark", "last_agent": "onenote", "mic_enabled": false, "window": {"width": 960, "height": 540, "x": 100, "y": 100, "maximized": false}}, "profile": {"name": "User", "avatar": "default.png", "preferences": {"show_typing_indicator": true, "enable_sound_effects": false}}, "session": {"panels": {"settings": false, "profile": false, "logs": false, "quick": false}, "draft": "", "last_agent": "onenote", "crashed": false}}}
+{"ts": "2026-08-07T03:41:08.007286Z", "level": "INFO", "event": "agents.registered", "payload": {"agents": ["onenote", "weather", "news"]}}
+{"ts": "2026-08-07T03:41:08.007786Z", "level": "INFO", "event": "tools.registered", "payload": {"tools": ["echo"]}}
+{"ts": "2026-08-07T03:41:08.007786Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "Hello assistant"}}
+{"ts": "2026-08-07T03:41:08.008287Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: Hello assistant"}}
