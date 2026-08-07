@@ -13,6 +13,10 @@ sounddevice
 numpy
 scipy
 
+# System diagnostics (Phase 9) — optional at runtime; ObservabilityService
+# degrades gracefully to {"available": False} if this isn't installed.
+psutil
+
 # Agents / Services
 beautifulsoup4
 lxml

@@ -10,6 +10,7 @@ from src.core.memory_service import MemoryService
 from src.core.permission_service import PermissionService
 from src.core.verification_service import VerificationService
 from src.core.event_bus import EventBus
+from src.core.observability import ObservabilityService
 from src.core.state_manager import StateManager
 from src.core.state import AssistantState
 from src.core.results import AssistantResult
@@ -30,6 +31,11 @@ from src.services.nci_service import NCIService
 class AssistantCore:
     def __init__(self):
         self.events = EventBus()
+
+        # Observability (Phase 9): subscribes to the event bus immediately,
+        # before any other subsystem is constructed, so it never misses an
+        # event emitted during startup.
+        self.observability = ObservabilityService(self.events)
 
         # Persistent settings
         self.persistence = PersistenceService()
@@ -72,7 +78,7 @@ class AssistantCore:
         self.agents = AgentRouter(self.events)
         self.tasks = TaskService(self.events)
         self.memory = MemoryService(self.persistence)
-        self.permissions = PermissionService(self.events)
+        self.permissions = PermissionService(self.events, self.persistence)
         self.verification = VerificationService(self.permissions)
         self.tools = ToolRegistry()
         self.state_manager = StateManager(self.events)
@@ -134,6 +140,12 @@ class AssistantCore:
     # Multimodal (Phase 6)
     # ---------------------------------------------------------
     def capture_vision(self):
+        # Phase 10: camera access is permission-gated (see SafetyRules) and
+        # fails closed until granted — previously this ran unconditionally.
+        if not self.verification.verify("access_camera", {}):
+            self.logger.warn("vision.blocked", {"reason": "permission_denied"})
+            self.events.emit("vision.blocked", {"reason": "permission_denied"})
+            return None
         result = self.vision.capture()
         self.events.emit("vision.captured", {"result": result})
         self.logger.info("vision.captured", {"result": result})
@@ -186,8 +198,17 @@ class AssistantCore:
         """Consolidates what StateBridge.toggleMic() used to do directly
         (start/stop AudioService + persist the setting) into the core, so
         the UI layer just asks for a state change instead of owning the
-        audio subsystem and the event flow itself."""
+        audio subsystem and the event flow itself.
+
+        Phase 10: turning the mic ON is permission-gated (see SafetyRules)
+        and fails closed until granted — previously this started
+        unconditionally. Turning it OFF is never gated; stopping capture
+        is always safe to allow."""
         if not self.audio.active:
+            if not self.verification.verify("access_microphone", {}):
+                self.logger.warn("audio.blocked", {"reason": "permission_denied"})
+                self.events.emit("audio.blocked", {"reason": "permission_denied"})
+                return self.audio.active
             self.audio.start()
             self.settings["mic_enabled"] = True
             self.events.emit("audio.started", {})
@@ -197,6 +218,80 @@ class AssistantCore:
             self.events.emit("audio.stopped", {})
         self.save_settings()
         return self.audio.active
+
+    # ---------------------------------------------------------
+    # Permissions & Safety (Phase 10)
+    # ---------------------------------------------------------
+    def grant_permission(self, permission: str):
+        self.permissions.grant(permission)
+        self.logger.info("permission.granted", {"permission": permission})
+
+    def deny_permission(self, permission: str):
+        self.permissions.deny(permission)
+        self.logger.info("permission.denied", {"permission": permission})
+
+    def revoke_permission(self, permission: str):
+        self.permissions.revoke(permission)
+        self.logger.info("permission.revoked", {"permission": permission})
+
+    def list_permissions(self):
+        return {
+            "granted": sorted(self.permissions.granted),
+            "denied": sorted(self.permissions.denied),
+        }
+
+    def set_permission_decision_handler(self, handler):
+        """Wires an interactive approval callback (e.g. a QML dialog) into
+        PermissionService. Pass None to go back to fail-closed-only."""
+        self.permissions.set_decision_handler(handler)
+
+    # ---------------------------------------------------------
+    # Observability & Diagnostics (Phase 9)
+    # ---------------------------------------------------------
+    def get_diagnostics(self):
+        """Aggregates per-subsystem health with ObservabilityService's
+        counters/uptime/system metrics into one snapshot. AssistantCore
+        supplies the per-subsystem health because it's the only thing that
+        owns those subsystems and knows what "healthy" means for each —
+        ObservabilityService just assembles what it's given.
+
+        Vision/Voice/Audio are marked "simulated": true because they're
+        still placeholder-level (Phase 6/7 note in their own modules) — a
+        diagnostics panel should say so honestly rather than reporting
+        green health for a camera/mic that was never actually opened.
+        """
+        subsystems = {
+            "engine": {
+                "healthy": self.state_manager.state != AssistantState.ERROR,
+                "state": self.state_manager.state.value,
+            },
+            "voice": {
+                "healthy": True,
+                "listening": self.voice.listening,
+                "simulated": True,
+            },
+            "vision": {
+                "healthy": True,
+                "simulated": True,
+            },
+            "audio": {
+                "healthy": True,
+                "active": self.audio.active,
+                "simulated": True,
+            },
+            "plugins": {
+                "healthy": True,
+                "loaded": len(self.plugins.list_plugins()),
+            },
+            "security": {
+                "healthy": True,
+                "granted": len(self.permissions.granted),
+                "denied": len(self.permissions.denied),
+                "blocked_actions": len(self.verification.rules.blocked_actions),
+                "interactive_handler_wired": self.permissions._decision_handler is not None,
+            },
+        }
+        return self.observability.snapshot(subsystems)
 
     # ---------------------------------------------------------
     # Tool Registration

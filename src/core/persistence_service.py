@@ -13,6 +13,7 @@ class PersistenceService:
         self.settings_path = os.path.join(self.base_dir, "settings.json")
         self.chat_path = os.path.join(self.base_dir, "chat_history.json")
         self.memory_path = os.path.join(self.base_dir, "memory.json")
+        self.permissions_path = os.path.join(self.base_dir, "permissions.json")
 
         self._ensure_dirs()
 
@@ -69,4 +70,17 @@ class PersistenceService:
     def save_memory(self, memory: dict):
         with open(self.memory_path, "w") as f:
             json.dump(memory, f, indent=4)
+
+    # -----------------------------
+    # Permissions (Phase 10)
+    # -----------------------------
+    def load_permissions(self):
+        if not os.path.exists(self.permissions_path):
+            return {"granted": [], "denied": []}
+        with open(self.permissions_path, "r") as f:
+            return json.load(f)
+
+    def save_permissions(self, permissions: dict):
+        with open(self.permissions_path, "w") as f:
+            json.dump(permissions, f, indent=4)
 

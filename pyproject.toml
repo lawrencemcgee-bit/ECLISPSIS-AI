@@ -23,6 +23,7 @@ dependencies = [
     "pytest-asyncio==0.23.5",
     "mypy==2.3.0",
     "ruff>=0.15",
+    "psutil>=6.0.0",
 ]
 
 [tool.ruff]

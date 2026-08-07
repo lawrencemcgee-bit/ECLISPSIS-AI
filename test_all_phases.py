@@ -2,7 +2,7 @@
 ECLIPSIS-AI — Cross-Phase Regression Test Script
 ==================================================
 
-Covers Phases 1-5. Run from the repository root:
+Covers Phases 1-10. Run from the repository root:
 
     python test_all_phases.py
 
@@ -298,9 +298,13 @@ class Phase6Multimodal(unittest.TestCase):
             self.assertIsNotNone(assistant.audio)
 
     def test_toggle_mic_and_events(self):
+        """Phase 10 note: turning the mic on is now permission-gated, so
+        this test grants access_microphone first — the fail-closed default
+        without a grant is covered separately in Phase10Security."""
         from src.core.assistant_core import AssistantCore
         with _isolated_cwd():
             assistant = AssistantCore()
+            assistant.grant_permission("access_microphone")
             fired = []
             assistant.events.on("audio.started", lambda p: fired.append("started"))
             assistant.events.on("audio.stopped", lambda p: fired.append("stopped"))
@@ -320,13 +324,18 @@ class Phase6Multimodal(unittest.TestCase):
         """The core claim of this phase's audio-ownership move: a restarted
         AssistantCore should resume listening if it was on when settings
         were last saved — previously this restore logic lived only in the
-        UI layer's __init__."""
+        UI layer's __init__.
+
+        Phase 10 note: access_microphone is granted first since toggle_mic
+        is now permission-gated; the grant itself persists too, so
+        assistant2 doesn't need to re-grant it."""
         from src.core.assistant_core import AssistantCore
         tmp_dir = tempfile.mkdtemp(prefix="eclipsis_audiotest_")
         old_cwd = os.getcwd()
         try:
             os.chdir(tmp_dir)
             assistant1 = AssistantCore()
+            assistant1.grant_permission("access_microphone")
             assistant1.toggle_mic()  # turn on
             assistant1.save_settings()
 
@@ -337,9 +346,13 @@ class Phase6Multimodal(unittest.TestCase):
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_vision_and_voice_events_fire(self):
+        """Phase 10 note: capture_vision is now permission-gated, so this
+        test grants access_camera first — the fail-closed default without
+        a grant is covered separately in Phase10Security."""
         from src.core.assistant_core import AssistantCore
         with _isolated_cwd():
             assistant = AssistantCore()
+            assistant.grant_permission("access_camera")
             fired = []
             assistant.events.on("vision.captured", lambda p: fired.append("vision"))
             assistant.events.on("voice.listening_started", lambda p: fired.append("voice_start"))
@@ -425,6 +438,194 @@ class Phase8NCI(unittest.TestCase):
             self.assertEqual(len(fired), 0,
                               "process_message() should not trigger NCI analysis "
                               "unless that integration is a deliberate, documented change")
+
+
+# ---------------------------------------------------------------------------
+# Phase 9 — Observability & Operations Center
+# ---------------------------------------------------------------------------
+class Phase9Observability(unittest.TestCase):
+    def test_observability_owned_by_core_and_subscribed_early(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            self.assertIsNotNone(assistant.observability)
+            # Constructed before other subsystems, so it never misses an
+            # event emitted during their setup.
+            self.assertGreaterEqual(assistant.observability.uptime_seconds(), 0)
+
+    def test_counters_increment_on_normal_flow(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.process_message("hello assistant")
+            self.assertEqual(
+                assistant.observability.counters.get("conversation.processed"), 1
+            )
+            self.assertIn("state.idle", assistant.observability.counters)
+
+    def test_last_error_recorded_on_agent_failure(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.agents.run("does_not_exist")
+            self.assertIsNotNone(assistant.observability.last_error)
+            self.assertEqual(assistant.observability.last_error["event"], "agent.failed")
+            self.assertEqual(
+                assistant.observability.counters.get("agent.failed"), 1
+            )
+
+    def test_diagnostics_snapshot_shape(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            snapshot = assistant.get_diagnostics()
+
+            for key in ("uptime_seconds", "counters", "last_error", "system", "subsystems"):
+                self.assertIn(key, snapshot)
+
+            for subsystem in ("engine", "voice", "vision", "audio", "plugins"):
+                self.assertIn(subsystem, snapshot["subsystems"])
+                self.assertIn("healthy", snapshot["subsystems"][subsystem])
+
+            # Honesty check: placeholder-level subsystems must say so rather
+            # than reporting as if real hardware/backends are wired up.
+            self.assertTrue(snapshot["subsystems"]["voice"]["simulated"])
+            self.assertTrue(snapshot["subsystems"]["vision"]["simulated"])
+            self.assertTrue(snapshot["subsystems"]["audio"]["simulated"])
+
+    def test_system_metrics_degrade_gracefully_without_psutil(self):
+        from src.core import observability as observability_module
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            original_psutil = observability_module.psutil
+            try:
+                observability_module.psutil = None
+                metrics = assistant.observability.system_metrics()
+                self.assertEqual(metrics, {"available": False})
+            finally:
+                observability_module.psutil = original_psutil
+
+    def test_engine_health_reflects_error_state(self):
+        from src.core.assistant_core import AssistantCore
+        from src.core.state import AssistantState
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.state_manager.set(AssistantState.ERROR)
+            snapshot = assistant.get_diagnostics()
+            self.assertFalse(snapshot["subsystems"]["engine"]["healthy"])
+
+
+# ---------------------------------------------------------------------------
+# Phase 10 — Security & Permissions
+# ---------------------------------------------------------------------------
+class Phase10Security(unittest.TestCase):
+    def test_camera_access_fails_closed_by_default(self):
+        """The core Phase 10 fix: no prior grant and no decision handler
+        means the request must be denied, not auto-approved."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            blocked = []
+            assistant.events.on("vision.blocked", lambda p: blocked.append(p))
+
+            result = assistant.capture_vision()
+            self.assertIsNone(result)
+            self.assertEqual(len(blocked), 1)
+
+    def test_microphone_access_fails_closed_by_default(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            blocked = []
+            assistant.events.on("audio.blocked", lambda p: blocked.append(p))
+
+            state = assistant.toggle_mic()
+            self.assertFalse(state)
+            self.assertFalse(assistant.audio.active)
+            self.assertEqual(len(blocked), 1)
+
+    def test_grant_persists_across_restart(self):
+        from src.core.assistant_core import AssistantCore
+        tmp_dir = tempfile.mkdtemp(prefix="eclipsis_permtest_")
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_dir)
+            assistant1 = AssistantCore()
+            assistant1.grant_permission("access_camera")
+
+            assistant2 = AssistantCore()  # simulated restart
+            self.assertIn("access_camera", assistant2.permissions.granted)
+            self.assertIsNotNone(assistant2.capture_vision())
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_deny_persists_and_can_be_revoked(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.deny_permission("access_camera")
+            self.assertIsNone(assistant.capture_vision())
+
+            assistant.revoke_permission("access_camera")
+            self.assertNotIn("access_camera", assistant.permissions.granted)
+            self.assertNotIn("access_camera", assistant.permissions.denied)
+            # Revoked, not granted — still fails closed until re-decided.
+            self.assertIsNone(assistant.capture_vision())
+
+    def test_decision_handler_is_consulted_and_result_persisted(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            calls = []
+
+            def always_approve(permission):
+                calls.append(permission)
+                return True
+
+            assistant.set_permission_decision_handler(always_approve)
+            self.assertIsNotNone(assistant.capture_vision())
+            self.assertEqual(calls, ["access_camera"])
+
+            # Second request should use the now-persisted grant rather than
+            # consulting the handler again.
+            assistant.capture_vision()
+            self.assertEqual(calls, ["access_camera"])
+
+    def test_hard_blocked_action_ignores_any_permission(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.grant_permission("run_shell_command")  # should not help
+            self.assertFalse(assistant.verification.verify("run_shell_command", {}))
+
+    def test_safety_rules_are_mutable_at_runtime(self):
+        from src.core.safety_rules import SafetyRules
+        rules = SafetyRules()
+
+        self.assertTrue(rules.is_allowed("access_camera"))
+        rules.block("access_camera")
+        self.assertFalse(rules.is_allowed("access_camera"))
+        self.assertFalse(rules.requires_permission("access_camera"))  # blocked wins
+
+        rules.unblock("access_camera")
+        rules.require_permission("access_camera")
+        self.assertTrue(rules.requires_permission("access_camera"))
+
+        rules.allow_without_permission("access_camera")
+        self.assertFalse(rules.requires_permission("access_camera"))
+
+    def test_diagnostics_reports_security_subsystem(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.grant_permission("access_camera")
+            snapshot = assistant.get_diagnostics()
+            security = snapshot["subsystems"]["security"]
+            self.assertEqual(security["granted"], 1)
+            self.assertEqual(security["denied"], 0)
+            self.assertFalse(security["interactive_handler_wired"])
 
 
 # ---------------------------------------------------------------------------
