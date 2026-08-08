@@ -1,7 +1,6 @@
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtMultimedia 5.15
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
 
 Window {
     id: root
@@ -21,10 +20,27 @@ Window {
     // -----------------------------
     // Sound Engine
     // -----------------------------
+    // Loaded lazily and guarded: if QtMultimedia isn't available on this
+    // machine, sound effects are disabled rather than blocking the rest
+    // of the UI — the same graceful-degradation approach the Python side
+    // already uses for optional capabilities (e.g. psutil in
+    // ObservabilityService).
     Loader {
         id: soundLoader
         source: "sound_engine.qml"
         onLoaded: soundLoader.item.enabled = assistant.profile.preferences.enable_sound_effects
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.warn("Sound engine failed to load (QtMultimedia unavailable?) — sound effects disabled.")
+            }
+        }
+    }
+
+    function playSound(name) {
+        if (!soundLoader.item) return
+        if (name === "click") soundLoader.item.playClick()
+        else if (name === "send") soundLoader.item.playSend()
+        else if (name === "reply") soundLoader.item.playReply()
     }
 
     // -----------------------------
@@ -119,7 +135,7 @@ Window {
         Component.onCompleted: {
             StateBridge.outputUpdated.connect(function(text) {
                 if (text === "__play_reply_sound__")
-                    soundLoader.item.playReply()
+                    playSound("reply")
             })
         }
     }
@@ -158,7 +174,7 @@ Window {
             model: ["onenote", "weather", "news"]
             currentIndex: model.indexOf(assistant.settings.last_agent)
             onCurrentTextChanged: {
-                soundLoader.item.playClick()
+                playSound("click")
                 StateBridge.selectAgent(currentText)
             }
         }
@@ -170,7 +186,7 @@ Window {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    soundLoader.item.playClick()
+                    playSound("click")
                     StateBridge.toggleMic()
                     StateBridge.updateWaveform()
                 }
@@ -184,7 +200,7 @@ Window {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    soundLoader.item.playClick()
+                    playSound("click")
                     themeLoader.item.toggle()
                     root.color = themeLoader.item.background
                     toastLoader.item.show("Theme changed")
@@ -229,7 +245,7 @@ Window {
                 anchors.fill: parent
                 onClicked: {
                     if (chatInput.text.length > 0) {
-                        soundLoader.item.playSend()
+                        playSound("send")
                         toastLoader.item.show("Message sent")
                         StateBridge.sendMessage(chatInput.text)
                         chatInput.text = ""
@@ -264,7 +280,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                soundLoader.item.playClick()
+                playSound("click")
                 settingsLoader.visible = !settingsLoader.visible
                 StateBridge.setSettingsOpen(settingsLoader.visible)
                 toastLoader.item.show("Settings " + (settingsLoader.visible ? "opened" : "closed"))
@@ -295,7 +311,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                soundLoader.item.playClick()
+                playSound("click")
                 profileLoader.visible = !profileLoader.visible
                 StateBridge.setProfileOpen(profileLoader.visible)
                 toastLoader.item.show("Profile panel " + (profileLoader.visible ? "opened" : "closed"))
@@ -338,7 +354,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                soundLoader.item.playClick()
+                playSound("click")
                 StateBridge.popLogs()
             }
         }
@@ -357,7 +373,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                soundLoader.item.playClick()
+                playSound("click")
                 StateBridge.popProfile()
             }
         }
@@ -376,7 +392,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                soundLoader.item.playClick()
+                playSound("click")
                 StateBridge.popQuick()
             }
         }
@@ -397,7 +413,7 @@ Window {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                soundLoader.item.playClick()
+                playSound("click")
                 pluginLoader.visible = !pluginLoader.visible
                 toastLoader.item.show("Plugins " + (pluginLoader.visible ? "opened" : "closed"))
             }

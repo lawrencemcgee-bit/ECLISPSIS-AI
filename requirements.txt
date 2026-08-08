@@ -5,6 +5,10 @@ aiohttp
 pydantic
 typing-extensions
 
+# Cross-platform API (Phase 11)
+fastapi
+uvicorn
+
 # Qt / UI
 PySide6==6.10.2
 

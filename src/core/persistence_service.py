@@ -14,6 +14,7 @@ class PersistenceService:
         self.chat_path = os.path.join(self.base_dir, "chat_history.json")
         self.memory_path = os.path.join(self.base_dir, "memory.json")
         self.permissions_path = os.path.join(self.base_dir, "permissions.json")
+        self.automations_path = os.path.join(self.base_dir, "automations.json")
 
         self._ensure_dirs()
 
@@ -83,4 +84,17 @@ class PersistenceService:
     def save_permissions(self, permissions: dict):
         with open(self.permissions_path, "w") as f:
             json.dump(permissions, f, indent=4)
+
+    # -----------------------------
+    # Automation triggers (Phase 13)
+    # -----------------------------
+    def load_automations(self):
+        if not os.path.exists(self.automations_path):
+            return {"triggers": []}
+        with open(self.automations_path, "r") as f:
+            return json.load(f)
+
+    def save_automations(self, automations: dict):
+        with open(self.automations_path, "w") as f:
+            json.dump(automations, f, indent=4)
 

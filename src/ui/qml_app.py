@@ -13,6 +13,13 @@ def run_qml_ui(assistant: AssistantCore):
 
     bridge = StateBridge(assistant)
 
+    # Phase 13: schedule-based automations need something to call tick()
+    # periodically. A plain background thread (see AssistantCore.
+    # start_automation_ticker's docstring) rather than a QTimer, so the
+    # same AssistantCore behaves identically whether it's hosted here or
+    # by api.py.
+    assistant.start_automation_ticker()
+
     assistant.events.on("state.changed",
         lambda payload: bridge.update_from_core(payload["new"])
     )
@@ -45,4 +52,6 @@ def run_qml_ui(assistant: AssistantCore):
     window.xChanged.connect(lambda: bridge.updateWindowPosition(window.x, window.y))
     window.yChanged.connect(lambda: bridge.updateWindowPosition(window.x, window.y))
 
-    sys.exit(app.exec())
+    exit_code = app.exec()
+    assistant.stop_automation_ticker()
+    sys.exit(exit_code)

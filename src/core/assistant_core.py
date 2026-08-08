@@ -3,9 +3,12 @@ AssistantCore orchestrates conversation, agents, tasks, memory, permissions,
 verification, tools, state transitions, persistence, logging, session restore,
 auto-backup, crash recovery, and multi-window persistence.
 """
+import threading
+
 from src.core.conversation_service import ConversationService
 from src.core.agent_router import AgentRouter
 from src.core.task_service import TaskService
+from src.core.automation_service import AutomationService
 from src.core.memory_service import MemoryService
 from src.core.permission_service import PermissionService
 from src.core.verification_service import VerificationService
@@ -77,6 +80,9 @@ class AssistantCore:
         self.conversation = ConversationService(self.events)
         self.agents = AgentRouter(self.events)
         self.tasks = TaskService(self.events)
+        self.automation = AutomationService(self.events, self._execute_automation_action, self.persistence)
+        self._ticker_thread = None
+        self._ticker_stop_event = None
         self.memory = MemoryService(self.persistence)
         self.permissions = PermissionService(self.events, self.persistence)
         self.verification = VerificationService(self.permissions)
@@ -220,6 +226,96 @@ class AssistantCore:
         return self.audio.active
 
     # ---------------------------------------------------------
+    # Automation & Proactive Assistance (Phase 12)
+    # ---------------------------------------------------------
+    def _execute_automation_action(self, action: dict):
+        """Resolves a declarative automation action into a call against an
+        existing capability, so an automated trigger can only do what a
+        manual request could already do — inheriting whatever
+        verification/permission checks that capability already has,
+        rather than automation becoming a separate, less-guarded path."""
+        action_type = action.get("type")
+
+        if action_type == "agent":
+            result = self.agents.run(action["agent"], **action.get("kwargs", {}))
+            if result.metadata and result.metadata.get("error"):
+                raise RuntimeError(result.metadata["error"])
+            return result
+
+        if action_type == "plugin":
+            return self.execute_plugins(action["plugin_id"], action.get("payload", {}))
+
+        if action_type == "message":
+            return self.process_message(action["text"])
+
+        if action_type == "notify":
+            # A proactive suggestion with nothing to execute — just surface
+            # it for the UI to display.
+            text = action["text"]
+            self.events.emit("automation.notification", {"text": text})
+            return {"notified": True, "text": text}
+
+        raise ValueError(f"Unknown automation action type: {action_type!r}")
+
+    def register_event_automation(self, event_name, action, predicate=None,
+                                   trigger_id=None, persistent=False):
+        return self.automation.register_event_trigger(
+            event_name, action, predicate, trigger_id, persistent
+        )
+
+    def register_schedule_automation(self, interval_seconds, action, trigger_id=None,
+                                      run_immediately=False, persistent=True):
+        return self.automation.register_schedule_trigger(
+            interval_seconds, action, trigger_id, run_immediately, persistent
+        )
+
+    def unregister_automation(self, trigger_id):
+        self.automation.unregister(trigger_id)
+
+    def set_automation_enabled(self, trigger_id, enabled):
+        self.automation.set_enabled(trigger_id, enabled)
+
+    def list_automations(self):
+        return self.automation.list_triggers()
+
+    def automation_tick(self, now=None):
+        """Fires any due schedule-based triggers. Call directly for
+        deterministic testing; in a running process this is what
+        start_automation_ticker() calls periodically."""
+        return self.automation.tick(now)
+
+    def start_automation_ticker(self, interval_seconds=30):
+        """Phase 13 decision on how schedule-based triggers actually get
+        checked in a running process: a plain daemon background thread
+        that calls automation_tick() every interval_seconds, rather than
+        a UI-framework-specific timer (e.g. Qt's QTimer). AssistantCore is
+        shared across the desktop UI (qml_app.py) and the HTTP API
+        (api.py) and shouldn't assume which one is hosting it — either
+        entry point just calls this once at startup.
+
+        Idempotent: calling this again stops any existing ticker first
+        rather than stacking threads.
+        """
+        self.stop_automation_ticker()
+        self._ticker_stop_event = threading.Event()
+
+        def _loop():
+            while not self._ticker_stop_event.wait(interval_seconds):
+                try:
+                    self.automation_tick()
+                except Exception as exc:
+                    self.logger.exception("automation.ticker_error", {"error": str(exc)})
+
+        self._ticker_thread = threading.Thread(target=_loop, daemon=True, name="automation-ticker")
+        self._ticker_thread.start()
+
+    def stop_automation_ticker(self):
+        if self._ticker_thread is not None and self._ticker_thread.is_alive():
+            self._ticker_stop_event.set()
+            self._ticker_thread.join(timeout=1)
+        self._ticker_thread = None
+
+    # ---------------------------------------------------------
     # Permissions & Safety (Phase 10)
     # ---------------------------------------------------------
     def grant_permission(self, permission: str):
@@ -289,6 +385,11 @@ class AssistantCore:
                 "denied": len(self.permissions.denied),
                 "blocked_actions": len(self.verification.rules.blocked_actions),
                 "interactive_handler_wired": self.permissions._decision_handler is not None,
+            },
+            "automation": {
+                "healthy": True,
+                "triggers": len(self.automation.triggers),
+                "enabled": sum(1 for t in self.automation.triggers.values() if t["enabled"]),
             },
         }
         return self.observability.snapshot(subsystems)

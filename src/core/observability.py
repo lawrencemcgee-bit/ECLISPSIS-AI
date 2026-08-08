@@ -43,6 +43,8 @@ class ObservabilityService:
         self.events.on("conversation.processed", lambda p: self._increment("conversation.processed"))
         self.events.on("plugin.toggle", lambda p: self._increment("plugin.toggle"))
         self.events.on("nci.analysis.completed", lambda p: self._increment("nci.analysis.completed"))
+        self.events.on("automation.completed", lambda p: self._increment("automation.completed"))
+        self.events.on("automation.failed", self._on_automation_failed)
         self.events.on("state.changed", self._on_state_changed)
 
     def _on_state_changed(self, payload):
@@ -57,6 +59,10 @@ class ObservabilityService:
     def _on_agent_failed(self, payload):
         self._increment("agent.failed")
         self.last_error = {"event": "agent.failed", "payload": payload, "ts": time.time()}
+
+    def _on_automation_failed(self, payload):
+        self._increment("automation.failed")
+        self.last_error = {"event": "automation.failed", "payload": payload, "ts": time.time()}
 
     def _increment(self, key, amount=1):
         self.counters[key] = self.counters.get(key, 0) + amount

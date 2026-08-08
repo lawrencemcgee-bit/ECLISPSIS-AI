@@ -2,7 +2,7 @@
 ECLIPSIS-AI — Cross-Phase Regression Test Script
 ==================================================
 
-Covers Phases 1-10. Run from the repository root:
+Covers Phases 1-13. Run from the repository root:
 
     python test_all_phases.py
 
@@ -24,6 +24,7 @@ import sys
 import ast
 import shutil
 import tempfile
+import time
 import unittest
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -626,6 +627,359 @@ class Phase10Security(unittest.TestCase):
             self.assertEqual(security["granted"], 1)
             self.assertEqual(security["denied"], 0)
             self.assertFalse(security["interactive_handler_wired"])
+
+
+# ---------------------------------------------------------------------------
+# Phase 11 — Cross-Platform API
+# ---------------------------------------------------------------------------
+try:
+    from fastapi.testclient import TestClient
+    _FASTAPI_AVAILABLE = True
+except ImportError:
+    _FASTAPI_AVAILABLE = False
+
+
+@unittest.skipUnless(_FASTAPI_AVAILABLE, "fastapi/httpx not installed in this environment")
+class Phase11CrossPlatformAPI(unittest.TestCase):
+    def _client(self):
+        from src.core.assistant_core import AssistantCore
+        from src.api.api_app import create_app
+        assistant = AssistantCore()
+        app = create_app(assistant)
+        return TestClient(app), assistant
+
+    def test_message_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/message", json={"message": "hello"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("content", resp.json())
+
+    def test_diagnostics_endpoint_matches_core_shape(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.get("/diagnostics")
+            self.assertEqual(resp.status_code, 200)
+            body = resp.json()
+            for key in ("uptime_seconds", "counters", "last_error", "system", "subsystems"):
+                self.assertIn(key, body)
+
+    def test_vision_endpoint_403_without_permission(self):
+        """Confirms Phase 10's fail-closed default is reachable and correct
+        over HTTP too, not just through direct AssistantCore calls."""
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/vision/analyze")
+            self.assertEqual(resp.status_code, 403)
+
+    def test_permissions_grant_then_vision_succeeds(self):
+        """Also proves there's exactly ONE AssistantCore behind the app —
+        the grant from one request is visible to the next."""
+        with _isolated_cwd():
+            client, assistant = self._client()
+            grant_resp = client.post("/permissions/grant", json={"permission": "access_camera"})
+            self.assertIn("access_camera", grant_resp.json()["granted"])
+
+            resp = client.post("/vision/analyze")
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("result", resp.json())
+
+    def test_plugins_list_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.get("/plugins")
+            self.assertEqual(resp.status_code, 200)
+            self.assertIsInstance(resp.json(), list)
+
+    def test_unimplemented_endpoints_return_501_not_404_or_fake_data(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            cases = (
+                ("post", "/nci/batch"),
+                ("get", "/nci/latest"),
+                ("get", "/vision/latest"),
+                ("post", "/social/analyze"),
+            )
+            for method, path in cases:
+                resp = getattr(client, method)(path)
+                self.assertEqual(resp.status_code, 501, f"{path} should be 501")
+                self.assertIn("feature", resp.json()["detail"])
+
+
+# ---------------------------------------------------------------------------
+# Phase 12 — Automation & Proactive Assistance
+# ---------------------------------------------------------------------------
+class Phase12Automation(unittest.TestCase):
+    def test_event_trigger_fires_notify_action(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            notifications = []
+            assistant.events.on("automation.notification", lambda p: notifications.append(p))
+
+            assistant.register_event_automation(
+                "state.changed",
+                {"type": "notify", "text": "the assistant changed state"},
+            )
+            assistant.process_message("hello")  # triggers a state.changed cycle
+
+            self.assertTrue(len(notifications) >= 1)
+            self.assertEqual(notifications[0]["text"], "the assistant changed state")
+
+    def test_event_trigger_predicate_filters_payload(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            fired = []
+            assistant.events.on("automation.triggered", lambda p: fired.append(p))
+
+            assistant.register_event_automation(
+                "state.changed",
+                {"type": "notify", "text": "only for busy"},
+                predicate=lambda payload: payload.get("new") == "busy",
+            )
+            assistant.process_message("hello")
+
+            # state.changed fires more than once per message (busy -> idle);
+            # only the "busy" transition should have matched the predicate.
+            matched = [f for f in fired if f["context"].get("new") == "busy"]
+            self.assertEqual(len(fired), len(matched))
+
+    def test_schedule_trigger_fires_when_due(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            trigger_id = assistant.register_schedule_automation(
+                interval_seconds=60,
+                action={"type": "notify", "text": "scheduled check-in"},
+                run_immediately=True,
+            )
+            fired = assistant.automation_tick()
+            self.assertIn(trigger_id, fired)
+
+            # Recurring: shouldn't fire again immediately after rescheduling.
+            fired_again = assistant.automation_tick()
+            self.assertNotIn(trigger_id, fired_again)
+
+    def test_schedule_trigger_not_fired_before_due(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            trigger_id = assistant.register_schedule_automation(
+                interval_seconds=3600,
+                action={"type": "notify", "text": "too soon"},
+            )
+            fired = assistant.automation_tick()
+            self.assertNotIn(trigger_id, fired)
+
+    def test_disabled_trigger_does_not_fire(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            trigger_id = assistant.register_schedule_automation(
+                interval_seconds=60,
+                action={"type": "notify", "text": "should not fire"},
+                run_immediately=True,
+            )
+            assistant.set_automation_enabled(trigger_id, False)
+            fired = assistant.automation_tick()
+            self.assertNotIn(trigger_id, fired)
+
+    def test_agent_action_routes_through_agent_router(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            completed = []
+            assistant.events.on("automation.completed", lambda p: completed.append(p))
+
+            assistant.register_schedule_automation(
+                interval_seconds=60,
+                action={"type": "agent", "agent": "weather", "kwargs": {"location": "Austin"}},
+                run_immediately=True,
+            )
+            assistant.automation_tick()
+
+            self.assertEqual(len(completed), 1)
+
+    def test_unknown_action_type_fires_automation_failed(self):
+        """Also confirms the Phase 9/12 integration: an automation failure
+        is captured by ObservabilityService's last_error, same as an
+        agent failure."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            failed = []
+            assistant.events.on("automation.failed", lambda p: failed.append(p))
+
+            assistant.register_schedule_automation(
+                interval_seconds=60,
+                action={"type": "not_a_real_type"},
+                run_immediately=True,
+            )
+            assistant.automation_tick()
+
+            self.assertEqual(len(failed), 1)
+            self.assertEqual(assistant.observability.last_error["event"], "automation.failed")
+            self.assertEqual(assistant.observability.counters.get("automation.failed"), 1)
+
+    def test_list_and_unregister_triggers(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            trigger_id = assistant.register_schedule_automation(
+                interval_seconds=60,
+                action={"type": "notify", "text": "x"},
+            )
+            listed = assistant.list_automations()
+            self.assertEqual(len(listed), 1)
+            self.assertEqual(listed[0]["id"], trigger_id)
+            self.assertNotIn("action", listed[0])  # not JSON-safe/stable, deliberately omitted
+
+            assistant.unregister_automation(trigger_id)
+            self.assertEqual(assistant.list_automations(), [])
+
+    def test_diagnostics_reports_automation_subsystem(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.register_schedule_automation(
+                interval_seconds=60, action={"type": "notify", "text": "x"}
+            )
+            snapshot = assistant.get_diagnostics()
+            automation = snapshot["subsystems"]["automation"]
+            self.assertEqual(automation["triggers"], 1)
+            self.assertEqual(automation["enabled"], 1)
+
+
+# ---------------------------------------------------------------------------
+# Phase 13 — Final Validation (tick() wiring + automation persistence)
+# ---------------------------------------------------------------------------
+class Phase13FinalValidation(unittest.TestCase):
+    def test_persistent_schedule_trigger_survives_restart(self):
+        from src.core.assistant_core import AssistantCore
+        tmp_dir = tempfile.mkdtemp(prefix="eclipsis_automationtest_")
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_dir)
+            assistant1 = AssistantCore()
+            trigger_id = assistant1.register_schedule_automation(
+                interval_seconds=3600,
+                action={"type": "notify", "text": "morning check-in"},
+            )  # persistent=True by default for schedule triggers
+
+            assistant2 = AssistantCore()  # simulated restart
+            listed = assistant2.list_automations()
+            self.assertEqual(len(listed), 1)
+            self.assertEqual(listed[0]["id"], trigger_id)
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_non_persistent_trigger_does_not_survive_restart(self):
+        from src.core.assistant_core import AssistantCore
+        tmp_dir = tempfile.mkdtemp(prefix="eclipsis_automationtest_")
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_dir)
+            assistant1 = AssistantCore()
+            assistant1.register_schedule_automation(
+                interval_seconds=60,
+                action={"type": "notify", "text": "one-off"},
+                persistent=False,
+            )
+            assistant2 = AssistantCore()
+            self.assertEqual(assistant2.list_automations(), [])
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_persistent_event_trigger_survives_and_still_fires(self):
+        from src.core.assistant_core import AssistantCore
+        tmp_dir = tempfile.mkdtemp(prefix="eclipsis_automationtest_")
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(tmp_dir)
+            assistant1 = AssistantCore()
+            assistant1.register_event_automation(
+                "state.changed",
+                {"type": "notify", "text": "still here after restart"},
+                persistent=True,
+            )
+
+            assistant2 = AssistantCore()  # simulated restart
+            notifications = []
+            assistant2.events.on("automation.notification", lambda p: notifications.append(p))
+            assistant2.process_message("hello")
+            self.assertTrue(len(notifications) >= 1)
+        finally:
+            os.chdir(old_cwd)
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_event_trigger_with_predicate_cannot_be_persistent(self):
+        """The Phase 13 decision made explicit: predicates can't survive a
+        restart, so asking for both raises instead of silently dropping
+        the predicate."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            with self.assertRaises(ValueError):
+                assistant.register_event_automation(
+                    "state.changed",
+                    {"type": "notify", "text": "x"},
+                    predicate=lambda payload: True,
+                    persistent=True,
+                )
+
+    def test_ticker_calls_tick_periodically(self):
+        """The actual tick() wiring decision: a background thread started
+        by start_automation_ticker(), not left for a UI framework to own."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            completed = []
+            assistant.events.on("automation.completed", lambda p: completed.append(p))
+            assistant.register_schedule_automation(
+                interval_seconds=0.05,
+                action={"type": "notify", "text": "tick test"},
+                run_immediately=True,
+                persistent=False,
+            )
+            try:
+                assistant.start_automation_ticker(interval_seconds=0.05)
+                time.sleep(0.3)
+            finally:
+                assistant.stop_automation_ticker()
+
+            self.assertGreaterEqual(len(completed), 1)
+
+    def test_ticker_start_is_idempotent(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.start_automation_ticker(interval_seconds=5)
+            first_thread = assistant._ticker_thread
+            assistant.start_automation_ticker(interval_seconds=5)
+            second_thread = assistant._ticker_thread
+            try:
+                self.assertIsNot(first_thread, second_thread)
+                self.assertFalse(first_thread.is_alive())
+                self.assertTrue(second_thread.is_alive())
+            finally:
+                assistant.stop_automation_ticker()
+
+    def test_architecture_baseline_reflects_current_state(self):
+        """Regression guard: docs/architecture_baseline.md described an
+        empty repository all the way through Milestone 8's work — this
+        catches it going stale like that again."""
+        path = os.path.join(REPO_ROOT, "docs", "architecture_baseline.md")
+        with open(path) as f:
+            content = f.read()
+        self.assertNotIn("repository currently contains only a README", content)
+
+    def test_all_milestone_reports_present(self):
+        for n in range(9, 14):
+            path = os.path.join(REPO_ROOT, "docs", f"milestone_{n}_report.md")
+            self.assertTrue(os.path.exists(path), f"missing milestone_{n}_report.md")
 
 
 # ---------------------------------------------------------------------------
