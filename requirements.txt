@@ -4,13 +4,20 @@ requests
 aiohttp
 pydantic
 typing-extensions
+orjson
 
 # Cross-platform API (Phase 11)
-fastapi
-uvicorn
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart
+itsdangerous
+pyjwt
+cors
+request-validator
 
 # Qt / UI
-PySide6==6.10.2
+#PySide6==6.10.2
+flet>=0.25.0.dev3519
 
 # Audio + Waveform
 sounddevice
@@ -29,6 +36,7 @@ feedparser
 # Persistence / Storage
 tinydb
 jsonschema
+cryptography
 
 # Logging
 loguru
@@ -37,10 +45,16 @@ loguru
 importlib-metadata
 importlib-resources
 
+# connectors
+websockets>=12.0
+cryptography
+python-multipart
+
 # Tools / Utilities
 python-dateutil
 tzdata
+pyyaml
+markdown
 
 # Optional Enhancements (safe to include)
-markdown
-pyyaml
+
