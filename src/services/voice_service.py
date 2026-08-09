@@ -29,6 +29,15 @@ try:
 except ImportError:
     pyttsx3 = None
 
+# Same escape hatch as audio_service.py's FORCE_SIMULATED_AUDIO, and same
+# reasoning: a test suite should never touch real hardware/engines, full
+# stop, independent of whether doing so happens to be safe. pyttsx3.init()
+# in particular was running fresh on every one of the ~15+ tests that
+# construct an AssistantCore() before this — wasteful at minimum, and a
+# real risk of SAPI5 reentrancy issues on Windows from repeated init()
+# calls, not to mention a test suite that audibly talks during a run.
+FORCE_SIMULATED_VOICE = os.environ.get("ECLIPSIS_FORCE_SIMULATED_VOICE") == "1"
+
 DEFAULT_MODEL_PATH = os.path.join("models", "vosk-model-small-en-us-0.15")
 
 
@@ -39,12 +48,14 @@ class VoiceService:
 
         self.stt_available = False
         self._recognizer = None
-        self._init_stt(model_path or DEFAULT_MODEL_PATH)
+        if not FORCE_SIMULATED_VOICE:
+            self._init_stt(model_path or DEFAULT_MODEL_PATH)
 
         self.tts_available = False
         self._tts_engine = None
         self._tts_lock = threading.Lock()
-        self._init_tts()
+        if not FORCE_SIMULATED_VOICE:
+            self._init_tts()
 
     def _init_stt(self, model_path: str):
         if vosk is None or not os.path.isdir(model_path):

@@ -17,6 +17,7 @@ deliberately broad here rather than `except ImportError` for that reason.
 """
 
 import math
+import os
 import threading
 
 try:
@@ -27,6 +28,19 @@ except Exception:
     sd = None
     np = None
     REAL_AUDIO_AVAILABLE = False
+
+# Escape hatch for anything that must never touch real hardware — a test
+# suite, in particular. Real crash found in practice: running the full
+# test suite on a machine with working PortAudio opened and tore down
+# several real InputStreams back-to-back across different tests
+# (test_toggle_mic_and_events, test_mic_state_restored_on_restart, etc.),
+# each constructing its own fresh AssistantCore/AudioService, and crashed
+# the interpreter with a Windows access violation (0xC0000005) — a known
+# failure class for PortAudio/WASAPI when streams are opened/closed too
+# rapidly. Tests should never depend on or exercise real hardware in the
+# first place, independent of what caused this specific crash; that's the
+# actual bug. test_all_phases.py sets this before running.
+FORCE_SIMULATED_AUDIO = os.environ.get("ECLIPSIS_FORCE_SIMULATED_AUDIO") == "1"
 
 
 class AudioService:
@@ -42,7 +56,7 @@ class AudioService:
         # device (present but no physical mic, OS permission denied,
         # device in use by another process, etc.). Either failure mode
         # falls back to the simulated sine wave, not a crash.
-        self.real_capture_available = REAL_AUDIO_AVAILABLE
+        self.real_capture_available = REAL_AUDIO_AVAILABLE and not FORCE_SIMULATED_AUDIO
 
         self._stream = None
         self._lock = threading.Lock()
@@ -64,10 +78,23 @@ class AudioService:
 
     def _start_real_stream(self):
         def callback(indata, frames, time_info, status):
-            mono = indata[:, 0].copy()
-            with self._lock:
-                self._latest_block = mono
-                self._pending_frames.append((mono * 32767).astype(np.int16).tobytes())
+            # Deliberately broad: this runs on PortAudio's own native
+            # callback thread, not a normal Python thread. An unhandled
+            # exception here doesn't behave like a normal Python
+            # exception — it can propagate back across the C callback
+            # boundary and crash the interpreter outright, which is a
+            # known failure class for ctypes/cffi-based audio bindings.
+            # Swallowing it here (rather than just relying on the outer
+            # start()'s try/except, which only guards the call that
+            # opens the stream, not callbacks fired after it's running)
+            # is a deliberate defensive measure, not an oversight.
+            try:
+                mono = indata[:, 0].copy()
+                with self._lock:
+                    self._latest_block = mono
+                    self._pending_frames.append((mono * 32767).astype(np.int16).tobytes())
+            except Exception:
+                pass
 
         self._stream = sd.InputStream(
             samplerate=self.sample_rate,

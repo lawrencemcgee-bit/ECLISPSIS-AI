@@ -20,6 +20,15 @@ your real data/ folder, and clean up after themselves.
 """
 
 import os
+
+# Must be set before any AudioService is constructed (below, when phase
+# test classes import src.core.assistant_core / src.services.audio_service).
+# A test suite must never depend on or exercise real hardware — the crash
+# this specifically prevents is documented in audio_service.py's
+# FORCE_SIMULATED_AUDIO comment.
+os.environ["ECLIPSIS_FORCE_SIMULATED_AUDIO"] = "1"
+os.environ["ECLIPSIS_FORCE_SIMULATED_VOICE"] = "1"
+
 import sys
 import ast
 import json
