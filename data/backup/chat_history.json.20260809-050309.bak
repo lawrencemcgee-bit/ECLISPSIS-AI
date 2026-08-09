@@ -26,9 +26,5 @@
     {
         "sender": "weather",
         "text": "{'location': 'San Antonio', 'temperature': '92\u00b0F', 'condition': 'Clear skies', 'humidity': '40%'}"
-    },
-    {
-        "sender": "onenote",
-        "text": "Today's notes: System boot successful."
     }
 ]

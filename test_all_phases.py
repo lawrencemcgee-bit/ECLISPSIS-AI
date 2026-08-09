@@ -489,11 +489,27 @@ class Phase9Observability(unittest.TestCase):
                 self.assertIn(subsystem, snapshot["subsystems"])
                 self.assertIn("healthy", snapshot["subsystems"][subsystem])
 
-            # Honesty check: placeholder-level subsystems must say so rather
-            # than reporting as if real hardware/backends are wired up.
-            self.assertTrue(snapshot["subsystems"]["voice"]["simulated"])
+            # Honesty check: placeholder-level subsystems must say so
+            # rather than reporting as if real hardware/backends are
+            # wired up. Vision has no real pipeline yet and is always
+            # simulated. Voice/audio now depend on whether real STT/mic
+            # capture are actually available in THIS environment (a Vosk
+            # model present, PortAudio installed, etc.) — real voice I/O
+            # made these two environment-dependent, so "simulated" must
+            # be checked against actual availability rather than
+            # hardcoded True the way this assertion originally was
+            # (written before real capture existed; a user running this
+            # suite with real capture working correctly hit this exact
+            # stale assumption failing).
             self.assertTrue(snapshot["subsystems"]["vision"]["simulated"])
-            self.assertTrue(snapshot["subsystems"]["audio"]["simulated"])
+            self.assertEqual(
+                snapshot["subsystems"]["voice"]["simulated"],
+                not assistant.voice.stt_available,
+            )
+            self.assertEqual(
+                snapshot["subsystems"]["audio"]["simulated"],
+                not assistant.audio.real_capture_available,
+            )
 
     def test_system_metrics_degrade_gracefully_without_psutil(self):
         from src.core import observability as observability_module
