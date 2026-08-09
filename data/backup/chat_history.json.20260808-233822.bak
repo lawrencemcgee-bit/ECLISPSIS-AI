@@ -1,0 +1,10 @@
+[
+    {
+        "sender": "user",
+        "text": "test"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: test"
+    }
+]

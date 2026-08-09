@@ -22,6 +22,7 @@ your real data/ folder, and clean up after themselves.
 import os
 import sys
 import ast
+import json
 import shutil
 import tempfile
 import time
@@ -980,6 +981,126 @@ class Phase13FinalValidation(unittest.TestCase):
         for n in range(9, 14):
             path = os.path.join(REPO_ROOT, "docs", f"milestone_{n}_report.md")
             self.assertTrue(os.path.exists(path), f"missing milestone_{n}_report.md")
+
+
+# ---------------------------------------------------------------------------
+# Real Voice I/O — post-roadmap work (not part of the original Phases 0-13;
+# see docs/voice_io_assessment.md). Real STT (Vosk) / TTS (pyttsx3) /
+# real mic capture (sounddevice) are all optional at runtime — most of
+# these tests exercise the graceful-degradation contract directly, since
+# none of those three packages/a Vosk model are expected to be present in
+# every environment this suite runs in.
+# ---------------------------------------------------------------------------
+class RealVoiceIO(unittest.TestCase):
+    def test_audio_service_degrades_gracefully(self):
+        from src.services.audio_service import AudioService
+        audio = AudioService()
+        audio.start()  # must not raise even if sounddevice/PortAudio aren't available
+        samples = audio.get_samples()
+        self.assertEqual(len(samples), 64)
+        audio.stop()
+
+    def test_audio_pop_transcription_empty_without_real_capture(self):
+        from src.services.audio_service import AudioService
+        audio = AudioService()
+        if audio.real_capture_available:
+            self.skipTest("real audio capture available in this environment — this checks the no-capture path")
+        self.assertEqual(audio.pop_transcription_audio(), b"")
+
+    def test_voice_service_degrades_gracefully_without_stt_or_tts(self):
+        from src.services.voice_service import VoiceService
+        voice = VoiceService(model_path="/nonexistent/path/so/stt_available/is/false")
+        self.assertFalse(voice.stt_available)
+        self.assertIsNone(voice.transcribe_chunk(b"\x00\x00" * 100))
+        self.assertEqual(voice.list_voices(), [])
+        # speak() either genuinely works (pyttsx3 installed) or returns
+        # False — either way it must not raise.
+        result = voice.speak("hello")
+        self.assertIn(result, (True, False))
+
+    def test_transcribe_chunk_parses_final_result(self):
+        """Tests the actual glue logic (JSON parsing, text extraction)
+        against a fake recognizer, independent of whether the real vosk
+        package is installed in this environment."""
+        from src.services.voice_service import VoiceService
+        voice = VoiceService(model_path="/nonexistent")
+        voice.stt_available = True
+        voice._recognizer = _FakeRecognizer(accept=True, text="hello nova")
+        self.assertEqual(voice.transcribe_chunk(b"\x00\x00"), "hello nova")
+
+    def test_transcribe_chunk_returns_none_for_partial_utterance(self):
+        from src.services.voice_service import VoiceService
+        voice = VoiceService(model_path="/nonexistent")
+        voice.stt_available = True
+        voice._recognizer = _FakeRecognizer(accept=False, text="should not be returned")
+        self.assertIsNone(voice.transcribe_chunk(b"\x00\x00"))
+
+    def test_transcribe_chunk_returns_none_for_empty_text(self):
+        from src.services.voice_service import VoiceService
+        voice = VoiceService(model_path="/nonexistent")
+        voice.stt_available = True
+        voice._recognizer = _FakeRecognizer(accept=True, text="")
+        self.assertIsNone(voice.transcribe_chunk(b"\x00\x00"))
+
+    def test_process_voice_audio_noop_when_not_listening(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.audio.active = True  # simulate capture already running
+            self.assertIsNone(assistant.process_voice_audio())
+
+    def test_process_voice_audio_noop_when_audio_inactive(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.start_voice_listening()
+            self.assertFalse(assistant.audio.active)
+            self.assertIsNone(assistant.process_voice_audio())
+
+    def test_process_voice_audio_routes_recognized_text_through_existing_pipeline(self):
+        """Confirms the actual integration: a fake recognizer producing
+        text ends up routed through voice_command_received() ->
+        process_message(), the same tested pipeline typed messages use."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.audio.active = True
+            assistant.audio.real_capture_available = True
+            assistant.audio._pending_frames = [b"\x00\x00"]
+            assistant.start_voice_listening()
+            assistant.voice.stt_available = True
+            assistant.voice._recognizer = _FakeRecognizer(accept=True, text="hello assistant")
+
+            outcome = assistant.process_voice_audio()
+            self.assertIsNotNone(outcome)
+            self.assertEqual(outcome["text"], "hello assistant")
+            self.assertIsNotNone(outcome["result"].content)
+
+    def test_diagnostics_reports_stt_tts_capture_availability(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            snapshot = assistant.get_diagnostics()
+            voice = snapshot["subsystems"]["voice"]
+            audio = snapshot["subsystems"]["audio"]
+            for key in ("stt_available", "tts_available", "simulated"):
+                self.assertIn(key, voice)
+            self.assertIn("simulated", audio)
+
+
+class _FakeRecognizer:
+    """Stands in for vosk.KaldiRecognizer's two relevant methods, so the
+    glue logic in VoiceService.transcribe_chunk() can be tested without
+    the real vosk package or a downloaded model."""
+    def __init__(self, accept: bool, text: str):
+        self._accept = accept
+        self._text = text
+
+    def AcceptWaveform(self, audio_bytes):
+        return self._accept
+
+    def Result(self):
+        return json.dumps({"text": self._text})
 
 
 # ---------------------------------------------------------------------------

@@ -4,25 +4,28 @@ requests
 aiohttp
 pydantic
 typing-extensions
-orjson
 
 # Cross-platform API (Phase 11)
-fastapi>=0.110
-uvicorn[standard]>=0.29
-python-multipart
-itsdangerous
-pyjwt
-cors
-request-validator
+fastapi
+uvicorn
+
+# Flet UI (proposed migration from PySide6/QML — see docs/flet_migration_assessment.md)
+flet
 
 # Qt / UI
-#PySide6==6.10.2
-flet>=0.25.0.dev3519
+PySide6==6.10.2
 
 # Audio + Waveform
 sounddevice
 numpy
 scipy
+
+# Real voice I/O — STT (Vosk, offline/free) and TTS (pyttsx3, offline/free,
+# uses OS-installed voices). Both optional at runtime; graceful fallback
+# to simulated behavior if not installed. See docs/voice_io_assessment.md
+# — Vosk also needs a downloaded model, not just this package.
+vosk
+pyttsx3
 
 # System diagnostics (Phase 9) — optional at runtime; ObservabilityService
 # degrades gracefully to {"available": False} if this isn't installed.
@@ -36,7 +39,6 @@ feedparser
 # Persistence / Storage
 tinydb
 jsonschema
-cryptography
 
 # Logging
 loguru
@@ -45,16 +47,10 @@ loguru
 importlib-metadata
 importlib-resources
 
-# connectors
-websockets>=12.0
-cryptography
-python-multipart
-
 # Tools / Utilities
 python-dateutil
 tzdata
-pyyaml
-markdown
 
 # Optional Enhancements (safe to include)
-
+markdown
+pyyaml

@@ -96,8 +96,8 @@ class AssistantCore:
         # simulated/placeholder-level capture, same as before; only the
         # ownership and event integration changed.
         self.vision = VisionService()
-        self.voice = VoiceService()
         self.audio = AudioService()
+        self.voice = VoiceService(sample_rate=self.audio.sample_rate)
         self.nci = NCIService()
         if self.settings.get("mic_enabled", False):
             # Restored here now instead of in StateBridge's __init__, so
@@ -183,6 +183,43 @@ class AssistantCore:
             return AssistantResult(content=None, metadata={"error": "not_listening"})
         self.events.emit("voice.command_received", {"text": text})
         return self.process_message(text)
+
+    def process_voice_audio(self):
+        """The real-STT integration point voice_command_received()'s
+        docstring anticipated. Pulls whatever audio AudioService has
+        accumulated since the last call, feeds it to VoiceService's STT,
+        and — only once Vosk considers an utterance finalized — routes
+        the recognized text through voice_command_received().
+
+        Returns None on every "nothing happened yet" case (not listening,
+        audio not active, STT unavailable, or just no finalized utterance
+        this call) — none of those are errors, they're the normal state
+        while mid-utterance. Returns {"text": ..., "result": ...} only
+        when a command was actually recognized and processed, so a caller
+        (a UI polling loop) can show both what was heard and what the
+        assistant said back.
+
+        Callers are expected to call this frequently (every ~200-300ms)
+        while voice.listening and audio.active are both true — it does
+        no polling/waiting itself, matching the same "something else
+        calls this periodically" contract as automation_tick()."""
+        if not self.voice.listening or not self.audio.active:
+            return None
+        audio_bytes = self.audio.pop_transcription_audio()
+        text = self.voice.transcribe_chunk(audio_bytes)
+        if not text:
+            return None
+        result = self.voice_command_received(text)
+        return {"text": text, "result": result}
+
+    def speak(self, text: str):
+        return self.voice.speak(text)
+
+    def list_voices(self):
+        return self.voice.list_voices()
+
+    def set_voice(self, voice_id: str):
+        self.voice.set_voice(voice_id)
 
     # ---------------------------------------------------------
     # NCI Analytics (Phase 8)
@@ -364,7 +401,9 @@ class AssistantCore:
             "voice": {
                 "healthy": True,
                 "listening": self.voice.listening,
-                "simulated": True,
+                "stt_available": self.voice.stt_available,
+                "tts_available": self.voice.tts_available,
+                "simulated": not self.voice.stt_available,
             },
             "vision": {
                 "healthy": True,
@@ -373,7 +412,7 @@ class AssistantCore:
             "audio": {
                 "healthy": True,
                 "active": self.audio.active,
-                "simulated": True,
+                "simulated": not self.audio.real_capture_available,
             },
             "plugins": {
                 "healthy": True,

@@ -24,6 +24,15 @@ dependencies = [
     "mypy==2.3.0",
     "ruff>=0.15",
     "psutil>=6.0.0",
+    # Flet UI (proposed migration from PySide6/QML — see
+    # docs/flet_migration_assessment.md). pyside6 above is left in place;
+    # this is additive until a cutover decision is made.
+    "flet==0.86.1",
+    # Real voice I/O (see docs/voice_io_assessment.md). Both optional at
+    # runtime with graceful fallback — sounddevice/numpy above are also
+    # needed for real mic capture specifically.
+    "vosk>=0.3.45",
+    "pyttsx3>=2.90",
 ]
 
 [tool.ruff]

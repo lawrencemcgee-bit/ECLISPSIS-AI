@@ -1,0 +1,12 @@
+{
+    "theme": "dark",
+    "last_agent": "news",
+    "mic_enabled": false,
+    "window": {
+        "width": 960.0,
+        "height": 540.0,
+        "x": 10.0,
+        "y": 10.0,
+        "maximized": false
+    }
+}
