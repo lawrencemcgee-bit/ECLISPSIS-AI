@@ -1,12 +1,12 @@
 {
     "theme": "dark",
-    "last_agent": "onenote",
-    "mic_enabled": false,
+    "last_agent": "weather",
+    "mic_enabled": true,
     "window": {
         "width": 960.0,
-        "height": 540.0,
-        "x": 10.0,
-        "y": 10.0,
+        "height": 1232.0,
+        "x": 1248.0,
+        "y": 51.0,
         "maximized": false
     }
 }

@@ -38,5 +38,17 @@
     {
         "sender": "assistant",
         "text": "LocalEngine received: hello nova"
+    },
+    {
+        "sender": "weather",
+        "text": "{'location': 'San Antonio', 'temperature': '92\u00b0F', 'condition': 'Clear skies', 'humidity': '40%'}"
+    },
+    {
+        "sender": "vision",
+        "text": "vision_capture_placeholder"
+    },
+    {
+        "sender": "weather",
+        "text": "{'location': 'San Antonio', 'temperature': '92\u00b0F', 'condition': 'Clear skies', 'humidity': '40%'}"
     }
 ]

@@ -99,8 +99,12 @@ class FletBridge:
 
         for item in self._history:
             self.chat_list.controls.append(_chat_bubble(item["sender"], item["text"]))
-        if self._history:
-            self.chat_list.scroll_to(offset=-1)
+        # NOT scrolling here: at this point in nova/app.py's setup,
+        # page.add() hasn't run yet, so chat_list isn't actually mounted
+        # into the page's control tree — scrolling an unmounted control
+        # is a plausible source of a silent background-task exception.
+        # nova/app.py calls scroll_chat_to_end_now() explicitly, after
+        # page.add(), instead.
 
         if self._pending_crash_toast:
             self._toast("Recovered from previous crash")
@@ -167,16 +171,30 @@ class FletBridge:
     def _push_chat(self, sender, text):
         self.chat_list.controls.append(_chat_bubble(sender, text))
         self.chat_list.update()
-        # auto_scroll=True (set where chat_list is constructed) turned
-        # out not to reliably scroll to newly-appended items in practice
-        # — confirmed by direct testing, not assumed. This explicit call
-        # is the backup that actually does it. offset=-1 means "scroll to
-        # the end" in Flet's scroll_to() convention.
-        self.chat_list.scroll_to(offset=-1, duration=200)
+        # scroll_to() is async in this Flet version — confirmed by a real
+        # RuntimeWarning ("coroutine was never awaited") from calling it
+        # as if it were synchronous, which silently did nothing. _push_chat()
+        # is called from both sync contexts (send_message, from on_click/
+        # on_submit handlers) and async ones (_voice_loop); making this
+        # method itself async would cascade through every caller. Firing
+        # the coroutine via page.run_task() avoids that — it schedules
+        # the scroll on the page's event loop without requiring the
+        # caller to await anything.
+        self.page.run_task(self._scroll_chat_to_end)
 
         items = self._history + [{"sender": sender, "text": text}]
         self._history = items
         self.assistant.save_chat(items)
+
+    async def _scroll_chat_to_end(self):
+        await self.chat_list.scroll_to(offset=-1, duration=200)
+
+    def scroll_chat_to_end_now(self):
+        """Call after page.add() — see attach()'s comment on why the
+        initial-history scroll can't safely happen from inside attach()
+        itself."""
+        if self.chat_list is not None:
+            self.page.run_task(self._scroll_chat_to_end)
 
     def send_message(self, text: str):
         if not text.strip():

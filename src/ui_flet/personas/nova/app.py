@@ -180,4 +180,6 @@ def create_nova_app(assistant):
             )
         )
 
+        bridge.scroll_chat_to_end_now()
+
     return main
