@@ -1,0 +1,7 @@
+{
+    "granted": [
+        "access_microphone",
+        "access_camera"
+    ],
+    "denied": []
+}

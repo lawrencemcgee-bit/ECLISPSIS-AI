@@ -104,6 +104,30 @@ class FletBridge:
             self._toast("Recovered from previous crash")
             self._pending_crash_toast = False
 
+        # AssistantCore restores mic-on/off state from settings at
+        # startup (see AssistantCore.__init__'s mic_enabled restore) —
+        # but that happens before any UI exists to reflect it. Without
+        # this, the mic button always displayed as "off" regardless of
+        # whether audio was actually already active, so a first click
+        # after a restart where the mic was previously left on would
+        # silently turn it OFF instead of on. Sync both the button's
+        # visual state and the background tasks (waveform, voice loop)
+        # that toggle_mic() would otherwise be the only thing to start.
+        if self.assistant.audio.active:
+            if self.mic_button is not None:
+                self.mic_button.selected = True
+            self._start_waveform_task()
+            # voice.listening is never persisted (only audio.active is —
+            # see AssistantCore.__init__), so a restored-active mic needs
+            # this explicitly, not just a check against a flag that would
+            # always be False on a fresh AssistantCore regardless of the
+            # restore. Keeps the restore consistent with what
+            # toggle_mic() does when a user turns the mic on normally —
+            # both audio capture and voice listening together, not one
+            # without the other.
+            self.assistant.start_voice_listening()
+            self._start_voice_loop_task()
+
         self.page.update()
 
     # ---------------------------------------------------------

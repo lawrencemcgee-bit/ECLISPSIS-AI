@@ -17,6 +17,14 @@ not just at milestone boundaries.
 
 ## Recent Updates
 
+- **Fixed mic state not syncing on launch.** `AssistantCore` restores
+  the mic's previous on/off state from settings at startup, but the Flet
+  bridge never reflected that in the mic button's visual state or
+  restarted the waveform/voice-loop tasks that go with it — so a mic
+  left on from a previous session looked off, and the first click
+  actually turned it off instead of on. Also found `voice.listening`
+  isn't persisted at all (only `audio.active` is), so a restored-active
+  mic needed voice listening explicitly re-started too, not just checked.
 - **Fixed a native crash in the test suite.** Running the full suite on
   a machine with working audio hardware opened and tore down several real
   PortAudio streams back-to-back across different tests, crashing the
