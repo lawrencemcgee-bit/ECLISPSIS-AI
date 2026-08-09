@@ -18,6 +18,7 @@ from src.ui_flet.bridge import FletBridge
 from src.ui_flet.personas.nova import theme
 from src.ui_flet.personas.nova.orb import build_orb
 from src.ui_flet.personas.nova.waveform import build_waveform
+from src.ui_flet.personas.nova.permissions_dialog import build_permissions_button
 
 AGENTS = [
     ("onenote", ft.Icons.NOTE_ALT_OUTLINED, "Notes"),
@@ -37,6 +38,17 @@ def create_nova_app(assistant):
         page.window.height = assistant.settings.get("window", {}).get("height", 720)
 
         bridge = FletBridge(page, assistant)
+
+        # ---------------------------------------------------------
+        # Header (app label + permissions access)
+        # ---------------------------------------------------------
+        header = ft.Row(
+            controls=[
+                ft.Text("NOVA", size=14, color=theme.TEXT_MUTED, weight=ft.FontWeight.BOLD),
+                ft.Container(expand=True),
+                build_permissions_button(page, assistant),
+            ],
+        )
 
         # ---------------------------------------------------------
         # Orb + waveform (center focal point)
@@ -154,7 +166,7 @@ def create_nova_app(assistant):
         page.add(
             ft.Column(
                 controls=[
-                    ft.Container(height=24),
+                    ft.Container(content=header, padding=16),
                     orb_column,
                     ft.Container(height=12),
                     tool_tray,

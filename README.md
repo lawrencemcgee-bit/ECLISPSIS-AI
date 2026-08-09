@@ -17,6 +17,17 @@ not just at milestone boundaries.
 
 ## Recent Updates
 
+- **Added a real in-UI permissions panel to Nova** (a security-shield
+  icon in a new header row). Grant/deny microphone and camera access
+  proactively, rather than needing the one-off script from before.
+  Deliberately proactive rather than a blocking "Allow?" popup at the
+  moment of use: `PermissionService`'s decision handler is synchronous,
+  but a Flet dialog's click is inherently async — blocking Flet's single
+  event loop to wait for its own dialog's click would deadlock. Granting
+  ahead of time sidesteps that entirely.
+- **Confirmed real voice I/O is transcribing** — first real evidence
+  (visible in logs) that the STT pipeline is actually working end-to-end
+  on real hardware, not just passing unit tests against a fake recognizer.
 - **Fixed mic state not syncing on launch.** `AssistantCore` restores
   the mic's previous on/off state from settings at startup, but the Flet
   bridge never reflected that in the mic button's visual state or

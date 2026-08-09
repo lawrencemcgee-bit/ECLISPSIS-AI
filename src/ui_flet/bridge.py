@@ -99,6 +99,8 @@ class FletBridge:
 
         for item in self._history:
             self.chat_list.controls.append(_chat_bubble(item["sender"], item["text"]))
+        if self._history:
+            self.chat_list.scroll_to(offset=-1)
 
         if self._pending_crash_toast:
             self._toast("Recovered from previous crash")
@@ -165,6 +167,12 @@ class FletBridge:
     def _push_chat(self, sender, text):
         self.chat_list.controls.append(_chat_bubble(sender, text))
         self.chat_list.update()
+        # auto_scroll=True (set where chat_list is constructed) turned
+        # out not to reliably scroll to newly-appended items in practice
+        # — confirmed by direct testing, not assumed. This explicit call
+        # is the backup that actually does it. offset=-1 means "scroll to
+        # the end" in Flet's scroll_to() convention.
+        self.chat_list.scroll_to(offset=-1, duration=200)
 
         items = self._history + [{"sender": sender, "text": text}]
         self._history = items
