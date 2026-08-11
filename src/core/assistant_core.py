@@ -27,7 +27,7 @@ from src.plugins.plugin_manager import PluginManager
 from src.services.vision_service import VisionService
 from src.services.voice_service import VoiceService
 from src.services.audio_service import AudioService
-from src.services.nci_service import NCIService
+from src.services.nci_service import NCIService, NCIFetchError
 
 
 
@@ -238,17 +238,31 @@ class AssistantCore:
         self.voice.set_rate(rate)
 
     # ---------------------------------------------------------
-    # NCI Analytics (Phase 8)
+    # NCI Analytics (Phase 8 / Tier 3)
     # ---------------------------------------------------------
-    def analyze(self, text: str):
+    def analyze(self, text: str = None, *, url: str = None, topic: str = None):
         """Standalone, explicitly-invoked capability — not wired into
-        process_message() automatically. No specification exists yet for
-        what real analysis NCI should perform on every message, and
-        forcing it into that pipeline now would be inventing a design
-        decision rather than fixing a defect. Available for a future
-        caller (a UI panel, an automation phase) to invoke directly."""
-        self.events.emit("nci.analysis.started", {"text": text})
-        result = self.nci.interpret(text)
+        process_message() automatically; a chat message isn't research
+        content, so there's nothing to gain by scoring every turn.
+        Available for a future caller (a UI panel, an automation phase) to
+        invoke directly when it actually has an article/transcript to score.
+
+        `text` doubles as the transcript input for video content — NCI
+        scores text regardless of source medium, see NCIService docstring.
+        A fetch failure on `url` is reported back in the result rather than
+        raised, so a caller doesn't need its own try/except for the
+        network case."""
+        self.events.emit("nci.analysis.started", {"text": text, "url": url, "topic": topic})
+        try:
+            result = self.nci.interpret(content=text, url=url, topic=topic)
+        except NCIFetchError as exc:
+            result = {
+                "score": 0.0,
+                "label": "unscoreable",
+                "reason": str(exc),
+                "topic": topic,
+                "metadata": {"url": url},
+            }
         self.events.emit("nci.analysis.completed", {"result": result})
         self.logger.info("nci.analysis.completed", {"result": result})
         return result

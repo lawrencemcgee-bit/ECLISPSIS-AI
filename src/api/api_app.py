@@ -8,9 +8,11 @@ instance" principle Phase 2 fixed for the desktop bootstrap
 
 Endpoints implemented here cover only capabilities that actually exist
 elsewhere in the codebase (process_message, analyze, capture_vision,
-plugins, diagnostics, permissions). Endpoints named in the original design
-prompt but backed by functionality that doesn't exist yet — batch NCI
-scoring, social-media ingestion, latest-report history — return
+plugins, diagnostics, permissions). /nci/score is backed by a real local
+heuristic scorer (src/services/nci_service.py) as of Tier 3 — it accepts
+text and/or a url and an optional topic. Endpoints named in the original
+design prompt but still backed by functionality that doesn't exist yet —
+batch NCI scoring, social-media ingestion, latest-report history — return
 501 Not Implemented with an explanatory body instead of either faking a
 result or silently omitting the route. A client hitting them gets a
 clear, typed answer instead of a generic 404.
@@ -35,7 +37,9 @@ class MessageRequest(BaseModel):
 
 
 class NCIScoreRequest(BaseModel):
-    text: str
+    text: str | None = None
+    url: str | None = None
+    topic: str | None = None
 
 
 class PluginExecuteRequest(BaseModel):
@@ -74,7 +78,10 @@ def create_app(assistant: AssistantCore) -> FastAPI:
 
     @app.post("/nci/score")
     def post_nci_score(body: NCIScoreRequest):
-        return assistant.analyze(body.text)
+        try:
+            return assistant.analyze(body.text, url=body.url, topic=body.topic)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail={"error": str(exc)})
 
     @app.post("/nci/batch")
     def post_nci_batch():

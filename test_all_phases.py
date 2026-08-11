@@ -422,6 +422,11 @@ class Phase8NCI(unittest.TestCase):
             self.assertIsNotNone(assistant.nci)
 
     def test_analyze_fires_start_and_completed_events(self):
+        """Phase 8 shipped NCIService as a stub returning
+        {"interpreted": text} unconditionally. Tier 3 replaced it with a
+        real local heuristic scorer (src/services/nci_service.py), so this
+        now checks the real result shape instead of the stub's fixed dict —
+        events-fired behavior is unchanged."""
         from src.core.assistant_core import AssistantCore
         with _isolated_cwd():
             assistant = AssistantCore()
@@ -430,8 +435,46 @@ class Phase8NCI(unittest.TestCase):
             assistant.events.on("nci.analysis.completed", lambda p: fired.append("completed"))
 
             result = assistant.analyze("summarize my day")
-            self.assertEqual(result, {"interpreted": "summarize my day"})
+            self.assertIn("score", result)
+            self.assertIn("label", result)
+            self.assertIn("breakdown", result)
             self.assertEqual(fired, ["started", "completed"])
+
+    def test_analyze_scores_quality_without_topic(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            substantial = (
+                "Researchers published a new study today. According to the "
+                "report, the survey data shows a significant shift in how "
+                "people consume media online. " * 15
+            )
+            result = assistant.analyze(substantial)
+            self.assertGreater(result["score"], 0)
+            self.assertIn("quality", result["breakdown"])
+            self.assertNotIn("relevance", result["breakdown"])
+
+    def test_analyze_scores_relevance_with_topic(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            content = "Solar panels and battery storage are transforming home energy. " * 10
+            on_topic = assistant.analyze(content, topic="solar energy storage")
+            off_topic = assistant.analyze(content, topic="medieval castle architecture")
+
+            self.assertIn("relevance", on_topic["breakdown"])
+            self.assertGreater(
+                on_topic["breakdown"]["relevance"]["score"],
+                off_topic["breakdown"]["relevance"]["score"],
+            )
+
+    def test_analyze_reports_fetch_failure_without_raising(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant.analyze(url="http://this-domain-does-not-exist.invalid/article")
+            self.assertEqual(result["label"], "unscoreable")
+            self.assertIn("reason", result)
 
     def test_analyze_not_wired_into_process_message(self):
         """Deliberate design check, not just a behavior check: analyze()
