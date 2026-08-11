@@ -354,5 +354,133 @@
     {
         "sender": "assistant",
         "text": "LocalEngine received: hello nova"
+    },
+    {
+        "sender": "user",
+        "text": "hello velvet"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: hello velvet"
+    },
+    {
+        "sender": "user",
+        "text": "a people since our"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: a people since our"
+    },
+    {
+        "sender": "user",
+        "text": "to the my name is laurie our the to you"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: to the my name is laurie our the to you"
+    },
+    {
+        "sender": "user",
+        "text": "something about will be happening at all"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: something about will be happening at all"
+    },
+    {
+        "sender": "user",
+        "text": "how effective getting to have no about the best me"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: how effective getting to have no about the best me"
+    },
+    {
+        "sender": "user",
+        "text": "way into outside with just not bell markings how a shot"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: way into outside with just not bell markings how a shot"
+    },
+    {
+        "sender": "user",
+        "text": "about"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: about"
+    },
+    {
+        "sender": "user",
+        "text": "about what like"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: about what like"
+    },
+    {
+        "sender": "weather",
+        "text": "{'location': 'San Antonio', 'temperature': '92\u00b0F', 'condition': 'Clear skies', 'humidity': '40%'}"
+    },
+    {
+        "sender": "user",
+        "text": "point was that was brought in a huge pointed does to do she does change is gay"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: point was that was brought in a huge pointed does to do she does change is gay"
+    },
+    {
+        "sender": "user",
+        "text": "she just about this was a typical it of was so"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: she just about this was a typical it of was so"
+    },
+    {
+        "sender": "user",
+        "text": "postpone the cable he loved jimmy pilot sixteen eleven"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: postpone the cable he loved jimmy pilot sixteen eleven"
+    },
+    {
+        "sender": "news",
+        "text": "{'category': 'technology', 'headlines': ['AI breakthroughs accelerate global innovation', 'Tech companies expand into new markets', 'Major updates released across software ecosystems']}"
+    },
+    {
+        "sender": "user",
+        "text": "it was a big me you know what is it is either"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: it was a big me you know what is it is either"
+    },
+    {
+        "sender": "user",
+        "text": "a fetus deceive you see what this is just a little fifty defeated he beat us"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: a fetus deceive you see what this is just a little fifty defeated he beat us"
+    },
+    {
+        "sender": "user",
+        "text": "now that we got plenty back to see this this is the exact see stuff i shop"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: now that we got plenty back to see this this is the exact see stuff i shop"
+    },
+    {
+        "sender": "user",
+        "text": "but all this guy little what would happen if he did and eight was going what will be listening"
+    },
+    {
+        "sender": "assistant",
+        "text": "LocalEngine received: but all this guy little what would happen if he did and eight was going what will be listening"
     }
 ]
