@@ -4,6 +4,14 @@ version of this document, which described a pre-scaffolding, empty
 repository. That was accurate at the time; it has been stale since
 Milestone 1. This refresh reflects the actual current state.
 
+**Tier 2 repo-hygiene update**: `src/ui/` (QML/PySide6) is now formally
+**deprecated** — kept as a fallback, no further work planned. See
+`src/ui/DEPRECATED.md`. The five orphaned files flagged in §9 below have
+been deleted (`src/core/persistence.py`, `src/ui/plugin_panel.qml`,
+`src/ui/tk_stabilization.py`, `config/config_manager.py`,
+`config/settings.yaml`); §9 is left below as a historical record of what
+was found and why each was safe to remove, rather than rewritten away.
+
 ## 1. Overview
 14-phase roadmap (0–13), all phases now have working code and passing
 tests. `AssistantCore` is the single orchestration point, shared by two
@@ -128,23 +136,28 @@ actual failure):
 
 Confirmed orphaned/unused code, found while working through Milestones
 9–13 (fixed where fixing was in scope; flagged rather than silently
-deleted where it wasn't):
-- `src/core/observability.py` — **fixed in Milestone 9** (was dead, now real)
-- `src/core/persistence.py` — a separate, smaller, unused early draft of
-  what `persistence_service.py` (the one actually used everywhere) became.
-  Not imported anywhere. Still present, not removed.
-- `src/ui/plugin_panel.qml` — Python code with a `.qml` extension; a
-  stale duplicate of an early `assistant_core.py` missing everything from
-  Milestone 6 onward. Harmless (invalid QML, never loaded) but confusing.
-  Flagged in the Milestone 10 report; still present.
-- `src/ui/tk_stabilization.py` — a Milestone 1 CustomTkinter placeholder
-  from before the QML decision was made. Not imported anywhere.
-- `config/config_manager.py`, `config/settings.yaml` — not imported
-  anywhere in `src/`.
+deleted where it wasn't). **Update — deleted in the Tier 2 repo-hygiene
+pass**, since none were imported anywhere and each had a confirmed,
+understood reason for existing:
+- `src/core/observability.py` — **fixed in Milestone 9** (was dead, now real; not part of this deletion)
+- `src/core/persistence.py` — **deleted**. A separate, smaller, unused
+  early draft of what `persistence_service.py` (the one actually used
+  everywhere) became.
+- `src/ui/plugin_panel.qml` — **deleted**. Python code with a `.qml`
+  extension; a stale duplicate of an early `assistant_core.py` missing
+  everything from Milestone 6 onward. Harmless (invalid QML, never
+  loaded) but confusing. Flagged in the Milestone 10 report.
+- `src/ui/tk_stabilization.py` — **deleted**. A Milestone 1
+  CustomTkinter placeholder from before the QML decision was made.
+- `config/config_manager.py`, `config/settings.yaml` — **deleted**. Not
+  imported anywhere in `src/`; the `config/` directory itself is now
+  gone since it held only these two files.
 
-None of these are wired into any active code path, so none affect runtime
-behavior — but they're real repository debt worth a dedicated cleanup
-pass.
+None of these were wired into any active code path, so deleting them
+does not affect runtime behavior. Confirmed via `grep` across `src/`,
+`run.py`, `api.py`, and `flet_run.py` before removal, and via a full
+`test_all_phases.py` run afterward (still 77 tests, same pass/skip
+counts).
 
 ## 10. Tests, Static Analysis, CI
 - **`test_all_phases.py`** is the actual regression suite — plain
@@ -164,20 +177,27 @@ pass.
   (`ruff.toml`, `mypy.ini`) were found, so both would run with defaults.
 
 ## 11. Known Limitations
-- Domain engines remain placeholder-level: real NCI scoring, a real
-  vision pipeline, real STT/TTS, and the coding/social-media/browser
-  agents and creative-content layer described in the original
-  re-engineering prompt were never part of this 14-phase roadmap and
-  remain unbuilt.
+- Domain engines remain placeholder-level: real NCI scoring and a real
+  vision pipeline, and the coding/social-media/browser agents and
+  creative-content layer described in the original re-engineering
+  prompt, were never part of this 14-phase roadmap and remain unbuilt.
+  (Real voice I/O — STT/TTS — is no longer on this list; confirmed
+  working end-to-end, see `docs/voice_io_assessment.md`.)
 - No auth on the HTTP API (Milestone 11's known limitation, unchanged).
-- The five orphaned files in §9 are still present.
+- The five orphaned files formerly in §9 have been deleted (Tier 2).
+- `src/ui/` (QML/PySide6) is now deprecated — see `src/ui/DEPRECATED.md`.
 - `AutomationService` actions are limited to `notify`/`message`/`agent`/
   `plugin` — no way yet to, say, run a multi-step automation.
+- Lyra (the second Flet persona) is a lighter skeleton than Nova — no
+  pulse loop, no waveform, default chat builder — and isn't currently
+  being brought to parity.
 
 ## 12. Next Steps
-The original 14-phase roadmap (Milestones 0–13) is now complete. What
-remains is the domain-engine work that roadmap was always scoped around,
-not through: real NCI scoring, a real vision pipeline, real voice I/O,
+The original 14-phase roadmap (Milestones 0–13) is complete, and the
+Tier 2 repo-hygiene pass (QML deprecation, orphaned-file removal) is
+done. What remains is the domain-engine work that roadmap was always
+scoped around, not through: real NCI scoring, a real vision pipeline,
 new agents (coding, social-media, browser), the creative-content layer,
-API authentication, and the repository-hygiene cleanup in §9. These don't
-have phase numbers yet — worth a fresh planning pass to sequence them.
+API authentication, multi-step automations, and Lyra parity. These
+don't have phase numbers yet — worth a fresh planning pass to sequence
+them.

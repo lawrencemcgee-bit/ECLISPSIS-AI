@@ -22,6 +22,20 @@ DANGER = "#E85D5D"
 
 CONSOLE_FONT = "Consolas, Menlo, monospace"
 
+# Added for Lyra-parity avatar reactivity (avatar.py) — mirrors Nova's
+# theme.STATE_COLORS mapping onto Lyra's own warm palette instead of
+# Nova's blue/violet one, so the two personas stay visually distinct
+# while both reacting to the same AssistantCore state names.
+THINKING_COLOR = "#C97B3D"
+
+STATE_COLORS = {
+    "idle": ACCENT_DIM,
+    "listening": ACCENT,
+    "thinking": THINKING_COLOR,
+    "speaking": ACCENT,
+    "error": DANGER,
+}
+
 
 def console_panel(content, expand=False, height=None):
     return ft.Container(

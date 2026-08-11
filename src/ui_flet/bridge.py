@@ -59,6 +59,7 @@ class FletBridge:
         self.waveform: ft.Control | None = None
         self.mic_button: ft.Control | None = None
         self.on_state_changed_ui = None  # optional callback(state_str) for persona-specific reactions (e.g. Nova's orb color)
+        self._bubble_builder = _chat_bubble  # overridable via attach(bubble_builder=...) — see _chat_bubble's docstring
 
         # Restore chat history (same persistence call StateBridge used).
         self._history = []
@@ -90,15 +91,23 @@ class FletBridge:
     # ---------------------------------------------------------
     # Attachment — call once the persona has built its control tree
     # ---------------------------------------------------------
-    def attach(self, chat_list, typing_indicator=None, waveform=None, mic_button=None, on_state_changed_ui=None):
+    def attach(self, chat_list, typing_indicator=None, waveform=None, mic_button=None,
+               on_state_changed_ui=None, bubble_builder=None):
         self.chat_list = chat_list
         self.typing_indicator = typing_indicator
         self.waveform = waveform
         self.mic_button = mic_button
         self.on_state_changed_ui = on_state_changed_ui
+        # This param existed only as a docstring promise on _chat_bubble
+        # until Lyra parity work actually needed it — Lyra's console-style
+        # transcript renders "> sender: text" lines instead of Nova's
+        # chat bubbles. Falls back to the shared default when omitted, so
+        # Nova (which doesn't pass this) is unaffected.
+        if bubble_builder is not None:
+            self._bubble_builder = bubble_builder
 
         for item in self._history:
-            self.chat_list.controls.append(_chat_bubble(item["sender"], item["text"]))
+            self.chat_list.controls.append(self._bubble_builder(item["sender"], item["text"]))
         # NOT scrolling here: at this point in nova/app.py's setup,
         # page.add() hasn't run yet, so chat_list isn't actually mounted
         # into the page's control tree — scrolling an unmounted control
@@ -169,7 +178,7 @@ class FletBridge:
     # Chat
     # ---------------------------------------------------------
     def _push_chat(self, sender, text):
-        self.chat_list.controls.append(_chat_bubble(sender, text))
+        self.chat_list.controls.append(self._bubble_builder(sender, text))
         self.chat_list.update()
         # scroll_to() is async in this Flet version — confirmed by a real
         # RuntimeWarning ("coroutine was never awaited") from calling it
@@ -412,11 +421,11 @@ class FletBridge:
 
 
 def _chat_bubble(sender: str, text: str) -> ft.Control:
-    """Shared bubble builder so both personas render chat history
-    identically even if their surrounding chrome differs. Personas that
-    want a different bubble style can pass their own builder into
-    FletBridge instead — left simple here deliberately; see each
-    persona's theme module for where to hook a custom look."""
+    """Default bubble builder, used unless a persona passes its own via
+    attach(bubble_builder=...) — see FletBridge.attach(). Nova uses this
+    default; Lyra passes a console-styled builder
+    (src/ui_flet/personas/lyra/transcript.py) for parity with its
+    voice-first, monospace-terminal design language."""
     is_user = sender == "user"
     return ft.Row(
         alignment=ft.MainAxisAlignment.END if is_user else ft.MainAxisAlignment.START,

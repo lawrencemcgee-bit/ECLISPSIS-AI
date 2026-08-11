@@ -110,37 +110,70 @@ the reasoning.
 
 **Intent**: minimal chrome, monospace transcript styled like a terminal,
 a single command bar that's both a text input and a mic trigger. A
-static persona avatar rather than Nova's animated orb. Slash-command
-convention (`/weather`) for direct agent calls, versus Nova's tap-driven
-tray — two different interaction philosophies over the same backend.
+reactive persona avatar (lighter treatment than Nova's animated orb —
+no glow layer, matching "minimal chrome"). Slash-command convention
+(`/weather`) for direct agent calls, alongside a tap-driven tool tray
+added during the parity pass — two ways to reach the same agents, versus
+Nova's tray-only approach.
 
 **Color language**: warm neutral background (`#12100E`), amber accent
 (`#E8A96B`) — deliberately far from Nova's palette so the two read as
 different products, not a reskin.
 
-**Scope cut, stated plainly**: this pass built a lighter skeleton than
-Nova — static avatar (no pulse loop), no waveform wired in, chat bubbles
-reuse `FletBridge`'s default builder rather than a console-specific one.
-Bringing it to full parity is mechanical (the same patterns `orb.py`/
-`waveform.py` already demonstrate), just not done in this pass given the
-size of building two complete UIs in one sitting.
+**Tier 2 parity pass — done**: Lyra was brought to feature parity with
+Nova rather than left as the lighter initial skeleton. Specifically:
+a reactive avatar (`avatar.py`, mirrors `orb.py`'s state/pulse pattern
+without the glow layer), a waveform wired to `AudioService.get_samples()`
+(`waveform.py`, sized for the command bar rather than a centerpiece), a
+console-styled transcript (`transcript.py`) via a new `bubble_builder`
+hook on `FletBridge.attach()` (previously only a docstring promise —
+see bridge.py), full window geometry restore (position + maximized, not
+just size, matching Nova's Tier 1 fix), settings and permissions dialogs
+in the header, and a tool-trigger tray alongside the existing slash
+commands. The settings/permissions dialog logic was extracted out of
+`nova/settings_dialog.py` and `nova/permissions_dialog.py` into a new
+persona-agnostic `src/ui_flet/shared_dialogs.py` (parametrized by accent/
+muted colors) rather than duplicated, since the two personas' versions
+were identical apart from which theme module they imported — Nova's
+files are now thin wrappers over the shared logic with no behavior
+change.
+
+**Verification, done for real this time**: with PyPI reachable in this
+pass's environment, `flet==0.86.1` and `flet-web==0.86.1` were actually
+installed — the first time any of this Flet code has run against a real
+install rather than being reviewed against docs. Confirmed by direct
+attribute checks against the installed package: `ft.Border.all`,
+`ft.Alignment.CENTER`, every icon/animation/enum name used across the
+new and touched files. `ft.run(target, export_asgi_app=True)` succeeded
+for both personas. Beyond that, both personas' `main(page)` was executed
+against a hand-built fake `Page` stand-in and built their full control
+tree — orb/avatar, waveform, dialogs, tool tray, transcript, window
+restore — without error. Click handlers were also invoked directly; all
+failures were the same `Control must be added to the page first` from
+Flet's own mount-check, an artifact of the fake `Page` not being a real
+mounted session, not a defect in either persona's code.
+
+**Still not verified**: actual visual rendering and a real mounted
+session's click-through behavior — this sandbox has no display and no
+way to fetch the Flutter engine binary a full integration test needs
+(`flet.testing.FletTestApp` exists in the installed package but requires
+it). A real `python flet_run.py --persona lyra` launch on your machine is
+still the first true end-to-end confirmation, the same gap every prior
+stage of this migration has been honest about.
 
 ## 5. What this migration does NOT include
 
-- **Real voice I/O.** "Free personas and voices" implies actual
-  speech-to-text and text-to-speech. Neither exists anywhere in this
-  codebase — `VoiceService` (`src/services/voice_service.py`) is a
-  listening-state machine only, unchanged since Milestone 6. Free/open
-  options worth evaluating when that gets built: `pyttsx3` (offline TTS,
-  uses OS-installed voices, genuinely free, no API key), `Vosk` (offline
-  STT models, free/open), or the browser's Web Speech API if `flet_run.py
-  --web` is the target (free, but browser-dependent, not available on a
-  native desktop window). None of these have been evaluated hands-on here
-  — this is a pointer for the next piece of work, not a recommendation
-  made from testing.
-- **Deprecating/removing `src/ui/` (QML).** Left fully intact. That's a
-  separate decision from building this.
-- **Packaging** (`flet build` for a distributable exe/app). Not attempted.
+- **Real voice I/O.** ~~Neither exists anywhere in this codebase~~ —
+  **done**, see §6 below and `docs/voice_io_assessment.md`. Confirmed
+  working end-to-end (Vosk STT + pyttsx3 TTS) for Nova; Lyra's mic
+  button drives the same `FletBridge` plumbing, so it inherits the same
+  voice loop, though it hasn't had its own dedicated hands-on test pass
+  the way Nova's did.
+- **Deprecating/removing `src/ui/` (QML).** Decided in the Tier 2
+  repo-hygiene pass: deprecated in place (kept as a fallback, no further
+  work), not removed. See `src/ui/DEPRECATED.md`.
+- **Packaging** (`flet build` for a distributable exe/app). Still not
+  attempted.
 
 ## 6. Status update — Nova selected
 
@@ -160,11 +193,10 @@ but never run" to "verified against a real launch"):
 
 **Real bugs found and fixed along the way** (documented here since they
 were genuine mistakes, not just version guesses that happened to be
-wrong): `ft.alignment.center` → `ft.Alignment.CENTER`; confirmed
-`ft.border.all` (lowercase) is in fact correct, reversing an incorrect
-"fix" attempt; `ft.app()` → `ft.run()` (deprecated); `page.open()` doesn't
-exist on this Page — `page.show_dialog()` is correct; and a real Flet
-layout bug — `expand=True` on a child does nothing without a parent that
+wrong): `ft.alignment.center` → `ft.Alignment.CENTER`; `ft.app()` →
+`ft.run()` (deprecated); `page.open()` doesn't exist on this Page —
+`page.show_dialog()` is correct; and a real Flet layout bug —
+`expand=True` on a child does nothing without a parent that
 actually stretches to give it bounded width, which was hiding the entire
 input bar.
 
@@ -177,8 +209,12 @@ cutover:
 1. ~~Install and smoke-test what's here~~ — **done**. Several real bugs
    found and fixed via actual hands-on runs (§6).
 2. ~~Bring Lyra to parity with Nova, OR pick one persona to commit to~~ —
-   **decided: Nova.** Lyra stays in the repo, unmaintained going forward
-   unless that changes.
+   both, in sequence: Nova was decided as the *active development*
+   target first (§6), then Lyra was brought to feature parity in the
+   Tier 2 pass (§4) rather than staying unmaintained. Nova remains the
+   persona actually shipped/tested hands-on; Lyra now has the same
+   feature set, verified via the construction/API checks in §4, but not
+   yet the same hands-on launch confirmation Nova got.
 3. ~~Add remaining Nova coverage: window geometry restore, a
    settings/profile panel, tool-tray visual feedback~~ — **done**. Full
    window geometry (position + maximized, not just size) restores now; a
@@ -188,8 +224,13 @@ cutover:
    end-to-end live**, including repeated TTS calls. See
    `docs/voice_io_assessment.md` §6 for the full account, including three
    real bugs found and fixed along the way.
-5. Only after 3–4: decide whether `src/ui/` (QML) gets deprecated, kept
-   as a fallback, or removed.
+5. ~~Only after 3–4: decide whether `src/ui/` (QML) gets deprecated, kept
+   as a fallback, or removed~~ — **decided: deprecated in place**, kept
+   as a documented fallback. See `src/ui/DEPRECATED.md`.
+6. Remaining: a real hands-on launch of Lyra specifically (`python
+   flet_run.py --persona lyra`), the same way Nova got its §6 pass —
+   the construction-level checks in §4 are real but not a substitute for
+   that.
 
 ## 8. Tutorial — Flet concepts used in this build
 
