@@ -17,6 +17,30 @@ not just at milestone boundaries.
 
 ## Recent Updates
 
+- **Tier 1 (Nova completion) done**: window geometry now fully restores
+  across a restart (position + maximized state, not just size — the
+  latter was already working, the former two weren't); a voice settings
+  panel (voice selection + speech rate, next to the permissions button);
+  tool-tray icons flash on completion instead of giving no direct
+  feedback; the orb now visually reacts while TTS is actually speaking
+  (estimated from reply length, since precisely syncing to a background
+  thread's completion would be a real thread-safety risk in Flet, not
+  just unnecessary polish).
+- **Real voice I/O confirmed working end-to-end, live, in Nova.** Mic
+  capture → permission gate → Vosk STT → chat routing → pyttsx3 TTS,
+  including a *second* voice command in the same session — the actual
+  bug that needed chasing down. Three real, confirmed root causes found
+  and fixed along the way, not guessed: (1) the Vosk model path was a
+  bare relative path that resolved against the process's working
+  directory rather than the repo root, so a model that existed on disk
+  was silently never found; (2) `pyttsx3`'s TTS engine was being reused
+  across background threads — a well-documented Windows SAPI5/COM issue
+  where the first `speak()` call works and every later one silently does
+  nothing; fixed by creating a fresh engine per call instead; (3) chat
+  auto-scroll needed an explicit `scroll_to()` call, which turned out to
+  be `async` in this Flet version — calling it synchronously silently
+  no-op'd rather than erroring, caught via a `RuntimeWarning`. See
+  `docs/voice_io_assessment.md` for the full account.
 - **Added a real in-UI permissions panel to Nova** (a security-shield
   icon in a new header row). Grant/deny microphone and camera access
   proactively, rather than needing the one-off script from before.
@@ -127,7 +151,7 @@ python -m unittest test_all_phases.Phase9Observability -v
 | Cross-platform HTTP API | Real for the above; explicit `501`s for capabilities that don't exist yet (see below) |
 | Flet UI (Nova) | Real — chat, agent tray, mic/camera, reactive orb; window-restore-across-restart not yet confirmed |
 | QML UI | Real, but no longer the active development target |
-| Voice (STT/TTS/mic capture) | **Real when installed** (`vosk`/`pyttsx3`/`sounddevice` + a Vosk model) — falls back to simulated/no-op otherwise. Neither path has been machine-verified beyond a smoke test |
+| Voice (STT/TTS/mic capture) | **Real, confirmed working end-to-end live in Nova** (`vosk`/`pyttsx3`/`sounddevice` + a Vosk model) — falls back to simulated/no-op if not installed |
 | Vision | Wired correctly through permissions; camera capture itself is still a **placeholder**, no real pipeline |
 | NCI (content analysis/scoring) | Returns input text back — **no real scoring model yet** |
 | Coding / social-media / browser agents | **Do not exist yet** |

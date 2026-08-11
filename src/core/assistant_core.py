@@ -206,6 +206,19 @@ class AssistantCore:
         if not self.voice.listening or not self.audio.active:
             return None
         audio_bytes = self.audio.pop_transcription_audio()
+        # Temporary diagnostic (logs/app.log, "voice.audio_polled") — this
+        # loop was silently producing nothing with no exception anywhere,
+        # so the only way to see WHERE it breaks (no audio reaching this
+        # point vs. audio arriving but never finalizing a transcription)
+        # is to log every poll directly at the source, rather than infer
+        # it from UI symptoms that turned out to have multiple possible
+        # explanations. Safe to remove/quiet once the actual cause here
+        # is confirmed.
+        self.logger.info("voice.audio_polled", {
+            "bytes_captured": len(audio_bytes),
+            "real_capture_available": self.audio.real_capture_available,
+            "stt_available": self.voice.stt_available,
+        })
         text = self.voice.transcribe_chunk(audio_bytes)
         if not text:
             return None
@@ -220,6 +233,9 @@ class AssistantCore:
 
     def set_voice(self, voice_id: str):
         self.voice.set_voice(voice_id)
+
+    def set_speech_rate(self, rate: int):
+        self.voice.set_rate(rate)
 
     # ---------------------------------------------------------
     # NCI Analytics (Phase 8)

@@ -95,11 +95,16 @@ much tighter refresh interval than the 30s automation cadence), waveform
 tied to real `AudioService.get_samples()` output, agent tray, chat panel,
 input bar with mic toggle.
 
-**Deliberately not built this pass**: tool-trigger *visual* feedback
-(e.g., the tray icon flashing when an agent completes — currently it just
-runs silently and the result appears in chat), a settings/profile panel,
-window-geometry restore beyond a first-launch size (`page.window.on_event`
-wiring is present but untested).
+**Tier 1 follow-up work — since done**: tool-tray icons now flash on
+completion, a voice settings panel exists (voice selection + speech
+rate, built on the confirmed-working TTS system), and window geometry
+(position + maximized state, not just size) now fully restores across a
+restart. The orb also now visually reacts while TTS is actually
+speaking, estimated from reply length since `speak()` runs on a
+background thread outside the conversation state machine and reacting to
+a precise cross-thread "done" signal would be a real thread-safety risk,
+not just a style choice — see `src/ui_flet/bridge.py`'s `_voice_loop` for
+the reasoning.
 
 ## 4. Approach 2 — Lyra (voice-first command console)
 
@@ -174,14 +179,15 @@ cutover:
 2. ~~Bring Lyra to parity with Nova, OR pick one persona to commit to~~ —
    **decided: Nova.** Lyra stays in the repo, unmaintained going forward
    unless that changes.
-3. Add remaining Nova coverage: window geometry restore (`page.window.on_event`
-   is wired but not yet confirmed working — resize was tested, restore
-   across a restart wasn't), a settings/profile panel, tool-tray visual
-   feedback on agent completion.
-4. Evaluate the free voice options in §5 as their own scoped piece of
-   work — this is genuinely separate from the UI framework choice and is
-   the last major gap between what's built and "voice-first" as originally
-   requested.
+3. ~~Add remaining Nova coverage: window geometry restore, a
+   settings/profile panel, tool-tray visual feedback~~ — **done**. Full
+   window geometry (position + maximized, not just size) restores now; a
+   voice settings panel exists; tool-tray icons flash on completion; the
+   orb reacts while speaking.
+4. ~~Evaluate the free voice options in §5~~ — **done, confirmed working
+   end-to-end live**, including repeated TTS calls. See
+   `docs/voice_io_assessment.md` §6 for the full account, including three
+   real bugs found and fixed along the way.
 5. Only after 3–4: decide whether `src/ui/` (QML) gets deprecated, kept
    as a fallback, or removed.
 

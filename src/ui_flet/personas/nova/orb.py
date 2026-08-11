@@ -88,6 +88,13 @@ def build_orb(page: ft.Page, size: int = 180) -> ft.Stack:
                 await asyncio.sleep(delay)
         except asyncio.CancelledError:
             pass
+        except Exception:
+            # Most commonly: the window was closed while this loop was
+            # mid-iteration, and core.update() tried to reach an
+            # already-destroyed Flet session — confirmed via a real
+            # traceback, not hypothetical. A background loop hitting that
+            # should just stop quietly, not crash the app on exit.
+            pass
 
     def start_pulse():
         if _state["pulse_task"] is None:

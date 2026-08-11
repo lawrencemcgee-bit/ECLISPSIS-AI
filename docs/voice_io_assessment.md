@@ -24,7 +24,12 @@ is the first thing to actually use that seam — `process_voice_audio()` is
 new, everything downstream of it (verification, conversation processing,
 logging, events) is the same tested pipeline typed messages already use.
 
-## 2. Confidence
+## 2. Confidence — superseded, see §6
+
+The original version of this section said none of this had been run.
+That's no longer true — see §6 for what's now confirmed against a real
+launch, real hardware, and real speech. Kept below for the historical
+record of what was genuinely unknown at the time this was first written.
 
 Same honesty as the Flet migration: **none of this has been run.** This
 sandbox has no audio hardware regardless of what's installed, and
@@ -114,3 +119,53 @@ the assistant's typed reply, followed by hearing that reply spoken aloud.
 Given nothing here has run yet, expect something to need a fix on the
 first real attempt — report back whatever happens and we'll work through
 it the same way the Flet UI bugs got resolved.
+
+## 6. Status — confirmed working end-to-end
+
+As of live testing, the full loop works: mic on → speak → Vosk
+transcribes → text routes through `voice_command_received()` →
+`process_message()` → reply appears in chat → `pyttsx3` speaks the reply
+— **repeatedly**, across multiple voice commands in the same session, not
+just once.
+
+Getting there took four rounds of real debugging, each with a genuine,
+confirmed root cause rather than a guess:
+
+1. **Mic state not synced on relaunch.** `AssistantCore` restores the
+   mic's on/off state from settings at startup, but `FletBridge` never
+   reflected that in the button's visual state or resumed the
+   waveform/voice-loop tasks that go with it. A mic left on from a prior
+   session looked off, so the first click actually turned it off.
+2. **`chat_list.scroll_to()` is `async` in this Flet version.** Calling
+   it synchronously produced a `RuntimeWarning: coroutine ... was never
+   awaited` and silently did nothing — messages were being pushed to
+   chat correctly the whole time (`chat_history.json` proved it), they
+   just weren't visible without manually scrolling. Fixed by scheduling
+   it via `page.run_task()`.
+3. **The Vosk model was never actually found.** `DEFAULT_MODEL_PATH` was
+   a bare relative path (`"models/vosk-model-small-en-us-0.15"`),
+   resolved against the process's *working directory*, not the repo
+   root — so a model that genuinely existed on disk (once downloaded)
+   was silently invisible whenever the launch's cwd didn't happen to
+   match. An earlier "confirmed working" observation turned out to be a
+   misdiagnosis on my part: chat evidence that looked like proof of a
+   working voice pipeline was actually just typed text going through the
+   identical chat-logging code path — `process_message()` logs the same
+   way regardless of whether the text came from typing or from real STT,
+   so the two are indistinguishable from that evidence alone. Corrected
+   by resolving the model path relative to `voice_service.py`'s own file
+   location instead of `cwd`, and by adding a one-time startup print
+   showing the resolved path and whether it was found.
+4. **`pyttsx3`'s engine only spoke once.** A single shared engine
+   instance, driven from a fresh background thread on every `speak()`
+   call, worked the first time and then silently produced nothing on
+   every subsequent call — a well-documented Windows SAPI5/COM issue with
+   reusing one engine instance across multiple threads. Fixed by creating
+   a fresh `pyttsx3.init()` engine inside each call's own thread instead
+   of reusing one long-lived instance; rate/voice selection now tracked
+   as plain state on `VoiceService` and applied to each fresh engine.
+
+Also tuned: default speech rate lowered from `pyttsx3`'s ~200 wpm default
+to 150, which read as noticeably rushed. `set_rate()`/`set_voice()`
+available for further adjustment (e.g. from a future settings panel —
+none exists yet).

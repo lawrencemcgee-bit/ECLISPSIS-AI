@@ -286,8 +286,32 @@ class FletBridge:
                     if reply.content:
                         self._push_chat("assistant", reply.content)
                         self.assistant.speak(reply.content)
+                        # Visual "speaking" cue for the duration of TTS.
+                        # speak() itself runs on a background thread that
+                        # returns immediately, so there's no direct signal
+                        # here for when speech actually finishes — Flet
+                        # control updates need to happen on the page's own
+                        # event loop thread (this async loop), not an
+                        # arbitrary background thread, so reacting to a
+                        # cross-thread "done speaking" callback would be a
+                        # real thread-safety risk rather than a style
+                        # choice. Estimating duration from text length
+                        # (~15 chars/sec at the 150wpm rate set in
+                        # VoiceService) stays entirely within this
+                        # already-safe loop — approximate, not
+                        # frame-perfect, but avoids that risk entirely.
+                        if self.on_state_changed_ui:
+                            self.on_state_changed_ui("speaking")
+                        await asyncio.sleep(min(8.0, max(1.0, len(reply.content) / 15)))
+                        if self.on_state_changed_ui:
+                            self.on_state_changed_ui("idle")
                 await asyncio.sleep(0.3)
         except asyncio.CancelledError:
+            pass
+        except Exception:
+            # Same reasoning as orb.py's pulse loop: the window closing
+            # mid-iteration can throw when trying to reach an already-
+            # destroyed session. Stop quietly rather than crash on exit.
             pass
 
     def capture_vision(self):
@@ -325,6 +349,9 @@ class FletBridge:
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
             pass
+        except Exception:
+            # Same reasoning as orb.py's pulse loop and _voice_loop above.
+            pass
 
     def _render_waveform(self, samples):
         """Persona-specific rendering is injected via self.waveform being
@@ -345,13 +372,22 @@ class FletBridge:
         # page.window_width etc. as flat Page attributes. Confirm against
         # the installed version — this is one of the more version-churned
         # corners of Flet's API.
-        w = self.assistant.settings["window"]
-        w["width"] = self.page.window.width
-        w["height"] = self.page.window.height
-        w["x"] = self.page.window.left
-        w["y"] = self.page.window.top
-        w["maximized"] = self.page.window.maximized
-        self.assistant.save_settings()
+        #
+        # Now called on every window event (not just resize/move), so
+        # this can fire during odd lifecycle moments (very early startup,
+        # or right as the window is closing) where these properties might
+        # not be reliably readable — wrapped defensively rather than
+        # letting a rare edge case throw during normal window interaction.
+        try:
+            w = self.assistant.settings["window"]
+            w["width"] = self.page.window.width
+            w["height"] = self.page.window.height
+            w["x"] = self.page.window.left
+            w["y"] = self.page.window.top
+            w["maximized"] = self.page.window.maximized
+            self.assistant.save_settings()
+        except Exception:
+            pass
 
     def update_draft(self, text: str):
         self.assistant.session_state["draft"] = text

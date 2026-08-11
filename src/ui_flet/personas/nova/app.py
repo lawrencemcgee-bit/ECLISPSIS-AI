@@ -12,6 +12,8 @@ never executed. See bridge.py, orb.py, and waveform.py docstrings for
 specific version-sensitivity notes.
 """
 
+import asyncio
+
 import flet as ft
 
 from src.ui_flet.bridge import FletBridge
@@ -19,6 +21,7 @@ from src.ui_flet.personas.nova import theme
 from src.ui_flet.personas.nova.orb import build_orb
 from src.ui_flet.personas.nova.waveform import build_waveform
 from src.ui_flet.personas.nova.permissions_dialog import build_permissions_button
+from src.ui_flet.personas.nova.settings_dialog import build_settings_button
 
 AGENTS = [
     ("onenote", ft.Icons.NOTE_ALT_OUTLINED, "Notes"),
@@ -34,8 +37,18 @@ def create_nova_app(assistant):
         page.theme = theme.page_theme()
         page.theme_mode = ft.ThemeMode.DARK
         page.padding = 0
-        page.window.width = assistant.settings.get("window", {}).get("width", 1100)
-        page.window.height = assistant.settings.get("window", {}).get("height", 720)
+
+        # Full restore of the previous session's window geometry — this
+        # previously only restored width/height; x/y/maximized were
+        # already being saved by save_window_geometry() but never read
+        # back, so the window always reopened at the OS's default
+        # position regardless of where it was left.
+        window_settings = assistant.settings.get("window", {})
+        page.window.width = window_settings.get("width", 1100)
+        page.window.height = window_settings.get("height", 720)
+        page.window.left = window_settings.get("x", 100)
+        page.window.top = window_settings.get("y", 100)
+        page.window.maximized = window_settings.get("maximized", False)
 
         bridge = FletBridge(page, assistant)
 
@@ -46,6 +59,7 @@ def create_nova_app(assistant):
             controls=[
                 ft.Text("NOVA", size=14, color=theme.TEXT_MUTED, weight=ft.FontWeight.BOLD),
                 ft.Container(expand=True),
+                build_settings_button(page, assistant),
                 build_permissions_button(page, assistant),
             ],
         )
@@ -66,12 +80,33 @@ def create_nova_app(assistant):
         # Agent tool tray
         # ---------------------------------------------------------
         def make_agent_button(agent_id, icon, label):
+            button = ft.IconButton(icon=icon, icon_color=theme.ACCENT, tooltip=label)
+
+            async def _flash():
+                # Brief highlight confirming the agent call actually
+                # completed — previously the only feedback was the chat
+                # message appearing, easy to miss since it's outside the
+                # button the user just pressed. run_selected_agent() is
+                # synchronous (agents execute and return immediately, no
+                # background thread involved, unlike speak()), so by the
+                # time on_click reaches this point the result is already
+                # in chat — this is purely a visual confirmation, not
+                # covering any actual wait.
+                button.icon_color = ft.Colors.WHITE
+                button.update()
+                await asyncio.sleep(0.4)
+                button.icon_color = theme.ACCENT
+                button.update()
+
             def on_click(e):
                 bridge.select_agent(agent_id)
                 bridge.run_selected_agent()
+                page.run_task(_flash)
+
+            button.on_click = on_click
             return ft.Column(
                 controls=[
-                    ft.IconButton(icon=icon, icon_color=theme.ACCENT, on_click=on_click, tooltip=label),
+                    button,
                     ft.Text(label, size=11, color=theme.TEXT_MUTED),
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -159,8 +194,14 @@ def create_nova_app(assistant):
         orb.start_pulse()
 
         def on_window_event(e: ft.WindowEvent):
-            if e.type in (ft.WindowEventType.RESIZED, ft.WindowEventType.MOVED):
-                bridge.save_window_geometry()
+            # Saving unconditionally on every window event (not just
+            # RESIZED/MOVED) rather than trying to enumerate every
+            # relevant WindowEventType (maximize, restore, etc.) whose
+            # exact names weren't independently confirmed the way
+            # RESIZED/MOVED were. save_window_geometry() is a cheap JSON
+            # write; correctness here matters more than avoiding a few
+            # redundant writes during a drag.
+            bridge.save_window_geometry()
         page.window.on_event = on_window_event  # confirmed against current Window docs
 
         page.add(
