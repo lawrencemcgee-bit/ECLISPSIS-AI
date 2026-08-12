@@ -3,6 +3,7 @@ AssistantCore orchestrates conversation, agents, tasks, memory, permissions,
 verification, tools, state transitions, persistence, logging, session restore,
 auto-backup, crash recovery, and multi-window persistence.
 """
+import dataclasses
 import threading
 
 from src.core.conversation_service import ConversationService
@@ -29,6 +30,15 @@ from src.services.voice_service import VoiceService
 from src.services.audio_service import AudioService
 from src.services.nci_service import NCIService, NCIFetchError
 
+
+def _automation_result_jsonable(result):
+    """Same conversion AutomationService._fire() already applies to a
+    top-level executor result before persisting/emitting it — reused
+    here for each step's result inside a "sequence" action so nested
+    results (e.g. an AgentResult dataclass) are JSON-safe too."""
+    if dataclasses.is_dataclass(result):
+        return dataclasses.asdict(result)
+    return result
 
 
 class AssistantCore:
@@ -304,12 +314,22 @@ class AssistantCore:
     # ---------------------------------------------------------
     # Automation & Proactive Assistance (Phase 12)
     # ---------------------------------------------------------
-    def _execute_automation_action(self, action: dict):
+    # A "sequence" action can nest other sequences; these bound that
+    # recursion so a malformed or adversarial trigger definition (e.g.
+    # submitted via the authenticated automation API) can't cause
+    # unbounded work on the background ticker thread or blow the stack.
+    MAX_SEQUENCE_STEPS = 20
+    MAX_SEQUENCE_DEPTH = 5
+
+    def _execute_automation_action(self, action: dict, _depth: int = 0):
         """Resolves a declarative automation action into a call against an
         existing capability, so an automated trigger can only do what a
         manual request could already do — inheriting whatever
         verification/permission checks that capability already has,
-        rather than automation becoming a separate, less-guarded path."""
+        rather than automation becoming a separate, less-guarded path.
+
+        `_depth` is internal bookkeeping for "sequence" nesting, not part
+        of the action schema — callers never pass it."""
         action_type = action.get("type")
 
         if action_type == "agent":
@@ -331,7 +351,81 @@ class AssistantCore:
             self.events.emit("automation.notification", {"text": text})
             return {"notified": True, "text": text}
 
+        if action_type == "sequence":
+            return self._execute_sequence_action(action, _depth)
+
         raise ValueError(f"Unknown automation action type: {action_type!r}")
+
+    def _execute_sequence_action(self, action: dict, depth: int):
+        """Runs a list of steps in order through the same
+        _execute_automation_action() dispatch — a step can itself be an
+        "agent"/"plugin"/"message"/"notify" action, or another "sequence"
+        (bounded by MAX_SEQUENCE_DEPTH below).
+
+        `stop_on_error` (default True) halts the sequence at the first
+        failing step — the safer default for something that might run
+        unattended on a schedule, where later steps could depend on an
+        earlier one having actually happened. Set it False for a batch of
+        independent steps where one failing shouldn't block the rest.
+
+        Unlike the single-action types above, a sequence never raises for
+        an individual step's failure — the whole point is to keep going
+        (or not, per stop_on_error) and report per-step outcomes, rather
+        than losing which step failed and what every other step did. A
+        malformed top-level request (bad steps type, depth/count limits)
+        still raises, since that's a caller error, not a step failure."""
+        if depth >= self.MAX_SEQUENCE_DEPTH:
+            raise ValueError(
+                f"Sequence nesting exceeds the limit of {self.MAX_SEQUENCE_DEPTH} — "
+                "flatten the steps instead of nesting sequences this deep."
+            )
+        steps = action.get("steps")
+        if not isinstance(steps, list) or not steps:
+            raise ValueError("A 'sequence' action requires a non-empty 'steps' list.")
+        if len(steps) > self.MAX_SEQUENCE_STEPS:
+            raise ValueError(
+                f"Sequence has {len(steps)} steps, exceeding the limit of "
+                f"{self.MAX_SEQUENCE_STEPS}."
+            )
+        stop_on_error = action.get("stop_on_error", True)
+
+        results = []
+        for i, step in enumerate(steps):
+            step_type = step.get("type") if isinstance(step, dict) else None
+            self.events.emit("automation.step.started", {"index": i, "type": step_type})
+            try:
+                step_result = self._execute_automation_action(step, depth + 1)
+                jsonable = _automation_result_jsonable(step_result)
+                # A nested "sequence" step can return normally (no
+                # exception) while reporting its OWN all_ok: False —
+                # e.g. one of ITS steps failed but it had
+                # stop_on_error=False and kept going, or a depth/step
+                # limit tripped inside it. Without this check, that
+                # failure would be invisible at this level: the step
+                # "succeeded" (nothing raised) even though real work
+                # inside it didn't.
+                step_ok = not (isinstance(jsonable, dict)
+                                and jsonable.get("sequence")
+                                and not jsonable.get("all_ok", True))
+                results.append({
+                    "index": i, "type": step_type, "ok": step_ok, "result": jsonable,
+                })
+                self.events.emit("automation.step.completed", {"index": i, "type": step_type})
+                if not step_ok and stop_on_error:
+                    break
+            except Exception as exc:
+                results.append({"index": i, "type": step_type, "ok": False, "error": str(exc)})
+                self.events.emit("automation.step.failed", {"index": i, "type": step_type, "error": str(exc)})
+                if stop_on_error:
+                    break
+
+        return {
+            "sequence": True,
+            "steps_run": len(results),
+            "steps_total": len(steps),
+            "all_ok": all(r["ok"] for r in results),
+            "steps": results,
+        }
 
     def register_event_automation(self, event_name, action, predicate=None,
                                    trigger_id=None, persistent=False):

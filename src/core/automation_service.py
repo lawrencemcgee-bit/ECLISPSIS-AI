@@ -22,6 +22,15 @@ circular import) and means every automated action goes through the same
 capabilities (agents/plugins/messages) — and whatever verification or
 permission checks those already have — that a manual request would.
 
+Tier 3 added a "sequence" action type (resolved in AssistantCore's
+executor, not here — this class doesn't need to know the action-type
+vocabulary at all, only that action is a dict) — a list of steps run in
+order, each step being any other action type including another sequence
+(bounded nesting/step-count; see AssistantCore.MAX_SEQUENCE_DEPTH/
+MAX_SEQUENCE_STEPS). A single trigger can now compose multiple existing
+capabilities into one multi-step automation instead of being limited to
+a single action per trigger.
+
 Persistence (Phase 13): each trigger is registered with persistent=True
 or False. Only persistent triggers are written to disk (via
 PersistenceService's automations.json) and restored on the next startup.

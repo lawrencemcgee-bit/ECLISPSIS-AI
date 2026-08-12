@@ -203,8 +203,13 @@ afterward (72 passed / 7 skipped, same skip count as before).
 - Four of the five orphaned files formerly in §9 have been deleted
   (Tier 2); the fifth (`plugin_panel.qml`) was restored — see §9.
 - `src/ui/` (QML/PySide6) is now deprecated — see `src/ui/DEPRECATED.md`.
-- `AutomationService` actions are limited to `notify`/`message`/`agent`/
-  `plugin` — no way yet to, say, run a multi-step automation.
+- ~~`AutomationService` actions are limited to `notify`/`message`/`agent`/
+  `plugin`~~ — fixed in Tier 3. A `sequence` action type runs a list of
+  steps in order (each step any other action type, including another
+  sequence, bounded by `AssistantCore.MAX_SEQUENCE_DEPTH`/
+  `MAX_SEQUENCE_STEPS`); `stop_on_error` (default `True`) controls
+  whether a failing step halts the rest. See
+  `AssistantCore._execute_sequence_action`.
 - `/nci/batch`, `/nci/latest`, `/vision/latest` remain `501` — batch
   scoring and persisted history have no backing implementation yet, even
   though single-shot NCI scoring and vision capture are now real.
@@ -217,6 +222,12 @@ afterward (72 passed / 7 skipped, same skip count as before).
   structures per content type), not composed prose — there's no LLM
   anywhere in this codebase, by design. See
   `creative_content_service.py`'s module docstring.
+- No HTTP API endpoints exist yet for registering/listing/managing
+  automations (`register_schedule_automation` etc. are AssistantCore
+  methods, callable in-process from QML/Flet, but not exposed over
+  `/automations/*`) — pre-existing gap, not introduced by the
+  `sequence` action type, but worth flagging since automation is
+  otherwise now fully HTTP-API-authenticated territory (§7).
 
 ## 12. Next Steps
 The original 14-phase roadmap (Milestones 0–13) is complete, the Tier 2
@@ -225,9 +236,9 @@ with Nova. Tier 3 has shipped real NCI scoring, a real vision pipeline,
 real Coding/Social/Creative agents (`coding_service.py`,
 `ast`/`difflib`-based, no execution; `social_content_service.py`, local
 post analysis, no posting; `creative_content_service.py`,
-template/procedural generation + heuristic critique, no LLM), and
-API-key auth on the HTTP API (`api_key_service.py`). What remains: a
-browser agent, multi-step automations, and the batch/persistence-backed
-NCI and vision endpoints (`/nci/batch`, `/nci/latest`, `/vision/latest`).
-These don't have phase numbers yet — worth a fresh planning pass to
-sequence them.
+template/procedural generation + heuristic critique, no LLM), API-key
+auth on the HTTP API (`api_key_service.py`), and multi-step (`sequence`)
+automation actions. What remains: a browser agent, HTTP endpoints for
+automation management, and the batch/persistence-backed NCI and vision
+endpoints (`/nci/batch`, `/nci/latest`, `/vision/latest`). These don't
+have phase numbers yet — worth a fresh planning pass to sequence them.

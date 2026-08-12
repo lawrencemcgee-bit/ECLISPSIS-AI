@@ -147,7 +147,7 @@ python -m unittest test_all_phases.Phase9Observability -v
 | Plugins | Real (discovery, enable/disable, execution) |
 | Permissions & safety policy | Real — fails closed by default, decisions persist |
 | Observability (metrics, diagnostics, health) | Real |
-| Automation (event & schedule triggers) | Real — persists, ticked by a background thread |
+| Automation (event & schedule triggers) | Real — persists, ticked by a background thread; supports multi-step `sequence` actions (steps of any action type, including nested sequences) |
 | Cross-platform HTTP API | Real for the above; API-key auth on every route (`X-API-Key`, see `src/api/api_key_service.py`); explicit `501`s for capabilities that don't exist yet (see below) |
 | Flet UI (Nova) | Real — chat, agent tray, mic/camera, reactive orb; window-restore-across-restart not yet confirmed |
 | QML UI | Deprecated — kept as a fallback, no further work planned |
@@ -222,9 +222,10 @@ test_all_phases.py — The regression suite
 **Post-roadmap work in progress** (not part of the original 14 phases):
 Flet UI migration (Nova and Lyra both built and at feature parity),
 real voice I/O (confirmed working end-to-end), real NCI scoring, a real
-vision pipeline, real Coding/Social/Creative agents, and API-key auth on
-the HTTP API — all shipped in Tier 3. Still unbuilt: a browser agent
-(deliberately deferred), multi-step automations, and a few
+vision pipeline, real Coding/Social/Creative agents, API-key auth on
+the HTTP API, and multi-step (`sequence`) automation actions — all
+shipped in Tier 3. Still unbuilt: a browser agent (deliberately
+deferred), HTTP endpoints for automation management, and a few
 batch/persistence-backed endpoints (`/nci/batch`, `/nci/latest`,
 `/vision/latest`). See `docs/architecture_baseline.md` §11–12 for the
 full known-limitations list.

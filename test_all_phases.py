@@ -1208,6 +1208,150 @@ class Phase12Automation(unittest.TestCase):
             assistant.unregister_automation(trigger_id)
             self.assertEqual(assistant.list_automations(), [])
 
+    def test_sequence_action_runs_steps_in_order(self):
+        """Tier 3: multi-step automation actions — a "sequence" action
+        runs its steps through the same _execute_automation_action()
+        dispatch as any single action, so each step already has whatever
+        verification/permission checks that action type has on its own."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            order = []
+            assistant.events.on("automation.notification", lambda p: order.append(p["text"]))
+
+            result = assistant._execute_automation_action({
+                "type": "sequence",
+                "steps": [
+                    {"type": "notify", "text": "first"},
+                    {"type": "notify", "text": "second"},
+                    {"type": "notify", "text": "third"},
+                ],
+            })
+            self.assertEqual(order, ["first", "second", "third"])
+            self.assertTrue(result["all_ok"])
+            self.assertEqual(result["steps_run"], 3)
+            self.assertEqual(result["steps_total"], 3)
+
+    def test_sequence_action_stops_on_error_by_default(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant._execute_automation_action({
+                "type": "sequence",
+                "steps": [
+                    {"type": "notify", "text": "ok"},
+                    {"type": "not_a_real_type"},
+                    {"type": "notify", "text": "never reached"},
+                ],
+            })
+            self.assertFalse(result["all_ok"])
+            self.assertEqual(result["steps_run"], 2)  # stopped after the failure
+            self.assertEqual(result["steps_total"], 3)
+            self.assertTrue(result["steps"][0]["ok"])
+            self.assertFalse(result["steps"][1]["ok"])
+
+    def test_sequence_action_continues_on_error_when_configured(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            order = []
+            assistant.events.on("automation.notification", lambda p: order.append(p["text"]))
+
+            result = assistant._execute_automation_action({
+                "type": "sequence",
+                "stop_on_error": False,
+                "steps": [
+                    {"type": "notify", "text": "ok"},
+                    {"type": "not_a_real_type"},
+                    {"type": "notify", "text": "still runs"},
+                ],
+            })
+            self.assertEqual(order, ["ok", "still runs"])
+            self.assertFalse(result["all_ok"])
+            self.assertEqual(result["steps_run"], 3)
+
+    def test_sequence_action_can_nest(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant._execute_automation_action({
+                "type": "sequence",
+                "steps": [
+                    {"type": "sequence", "steps": [{"type": "notify", "text": "nested"}]},
+                ],
+            })
+            self.assertTrue(result["all_ok"])
+            self.assertTrue(result["steps"][0]["result"]["all_ok"])
+
+    def test_sequence_action_nested_failure_propagates_all_ok_upward(self):
+        """A nested sequence can return normally (no exception) while
+        reporting its OWN all_ok: False. The parent must reflect that in
+        its own all_ok/step "ok" rather than reporting success just
+        because nothing raised at its level."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant._execute_automation_action({
+                "type": "sequence",
+                "steps": [{
+                    "type": "sequence", "stop_on_error": False,
+                    "steps": [{"type": "not_a_real_type"}],
+                }],
+            })
+            self.assertFalse(result["all_ok"])
+            self.assertFalse(result["steps"][0]["ok"])
+
+    def test_sequence_action_enforces_depth_limit(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            action = {"type": "notify", "text": "deepest"}
+            for _ in range(assistant.MAX_SEQUENCE_DEPTH + 3):
+                action = {"type": "sequence", "steps": [action]}
+            result = assistant._execute_automation_action(action)
+            self.assertFalse(result["all_ok"])  # depth violation surfaces, doesn't crash
+
+    def test_sequence_action_enforces_step_count_limit(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            too_many = [{"type": "notify", "text": "x"}] * (assistant.MAX_SEQUENCE_STEPS + 5)
+            with self.assertRaises(ValueError):
+                assistant._execute_automation_action({"type": "sequence", "steps": too_many})
+
+    def test_sequence_action_rejects_empty_steps(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            with self.assertRaises(ValueError):
+                assistant._execute_automation_action({"type": "sequence", "steps": []})
+
+    def test_sequence_action_works_as_a_registered_schedule_trigger(self):
+        """End-to-end: a sequence works the same way through the normal
+        trigger -> tick -> _fire -> executor path as any other action
+        type, not just when called directly."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            completed = []
+            assistant.events.on("automation.completed", lambda p: completed.append(p))
+
+            assistant.register_schedule_automation(
+                interval_seconds=60,
+                action={
+                    "type": "sequence",
+                    "steps": [
+                        {"type": "notify", "text": "a"},
+                        {"type": "agent", "agent": "weather", "kwargs": {"location": "Austin"}},
+                    ],
+                },
+                run_immediately=True,
+            )
+            assistant.automation_tick()
+
+            self.assertEqual(len(completed), 1)
+            self.assertTrue(completed[0]["result"]["all_ok"])
+
     def test_diagnostics_reports_automation_subsystem(self):
         from src.core.assistant_core import AssistantCore
         with _isolated_cwd():
