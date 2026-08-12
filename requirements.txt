@@ -14,6 +14,12 @@ flet
 # flet-cli provides `flet build`/`flet doctor` for packaging — see
 # docs/flet_packaging.md. Not needed to just run the app.
 flet-cli
+# flet-web is needed for --web mode (flet_run.py --web). Flet's own
+# auto-install of this on first use fails under PEP 668
+# externally-managed environments — confirmed directly while live-
+# testing Lyra's launch (see docs/architecture_baseline.md §13) — so
+# it's listed explicitly rather than relying on that auto-install.
+flet-web
 
 # Qt / UI
 PySide6==6.10.2

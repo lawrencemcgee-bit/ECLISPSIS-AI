@@ -4,6 +4,7 @@ verification, tools, state transitions, persistence, logging, session restore,
 auto-backup, crash recovery, and multi-window persistence.
 """
 import dataclasses
+import datetime
 import threading
 
 from src.core.conversation_service import ConversationService
@@ -41,7 +42,22 @@ def _automation_result_jsonable(result):
     return result
 
 
+def _utc_timestamp() -> str:
+    """Same format LoggingService._timestamp() uses — duplicated rather
+    than imported since that method is private to that class and this is
+    a four-line, unlikely-to-drift formatting detail, not shared logic."""
+    return datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "") + "Z"
+
+
 class AssistantCore:
+    # NCI report / vision capture history is capped, not kept forever —
+    # this is a "what happened recently" log for /nci/latest and
+    # /vision/latest, not a permanent research archive. A user who wants
+    # to keep every report has PersistenceService's plain JSON file to
+    # copy elsewhere before it rolls off.
+    MAX_HISTORY_ENTRIES = 50
+    MAX_BATCH_SIZE = 20
+
     def __init__(self):
         self.events = EventBus()
 
@@ -53,6 +69,8 @@ class AssistantCore:
         # Persistent settings
         self.persistence = PersistenceService()
         self.settings = self.persistence.load_settings()
+        self._nci_reports = self.persistence.load_nci_reports()
+        self._vision_captures = self.persistence.load_vision_captures()
 
         # Volatile session state
         self.session = SessionStateService()
@@ -174,7 +192,22 @@ class AssistantCore:
         result = self.vision.capture()
         self.events.emit("vision.captured", {"result": result})
         self.logger.info("vision.captured", {"result": result})
+        self._record_vision_capture(result)
         return result
+
+    def get_latest_vision_captures(self, limit: int = 10) -> list:
+        """Most recent first. Includes simulated captures (result's own
+        "simulated" field distinguishes them) — even a simulated attempt
+        is meaningful history of what was tried and when."""
+        limit = max(1, min(limit, self.MAX_HISTORY_ENTRIES))
+        return list(reversed(self._vision_captures[-limit:]))
+
+    def _record_vision_capture(self, result: dict):
+        entry = {"timestamp": _utc_timestamp(), "result": result}
+        self._vision_captures.append(entry)
+        if len(self._vision_captures) > self.MAX_HISTORY_ENTRIES:
+            self._vision_captures = self._vision_captures[-self.MAX_HISTORY_ENTRIES:]
+        self.persistence.save_vision_captures(self._vision_captures)
 
     def start_voice_listening(self):
         changed = self.voice.start_listening()
@@ -284,7 +317,49 @@ class AssistantCore:
             }
         self.events.emit("nci.analysis.completed", {"result": result})
         self.logger.info("nci.analysis.completed", {"result": result})
+        self._record_nci_report(result)
         return result
+
+    def analyze_batch(self, items: list) -> list:
+        """Runs analyze() over a list of {"text"/"url"/"topic"} requests,
+        one call each — same per-item behavior as calling analyze()
+        individually (fetch failures degrade to an "unscoreable" result,
+        never raise), so a caller can't have one bad URL in a batch of 20
+        take down the other 19. Each item is also recorded to history the
+        same way a single analyze() call is, via analyze() itself — this
+        method doesn't duplicate that bookkeeping.
+
+        Capped at MAX_BATCH_SIZE — a large batch means many potential
+        URL fetches run synchronously in this call; an unbounded batch
+        would make one HTTP request able to block the process for an
+        unpredictable amount of time."""
+        if not isinstance(items, list) or not items:
+            raise ValueError("analyze_batch() requires a non-empty list of items.")
+        if len(items) > self.MAX_BATCH_SIZE:
+            raise ValueError(
+                f"Batch has {len(items)} items, exceeding the limit of {self.MAX_BATCH_SIZE}."
+            )
+        results = []
+        for item in items:
+            if not isinstance(item, dict):
+                raise ValueError("Each batch item must be an object with text/url/topic.")
+            results.append(self.analyze(
+                item.get("text"), url=item.get("url"), topic=item.get("topic"),
+            ))
+        return results
+
+    def get_latest_nci_reports(self, limit: int = 10) -> list:
+        """Most recent first. `limit` is clamped to MAX_HISTORY_ENTRIES —
+        there's nothing beyond that many kept to return anyway."""
+        limit = max(1, min(limit, self.MAX_HISTORY_ENTRIES))
+        return list(reversed(self._nci_reports[-limit:]))
+
+    def _record_nci_report(self, result: dict):
+        entry = {"timestamp": _utc_timestamp(), "result": result}
+        self._nci_reports.append(entry)
+        if len(self._nci_reports) > self.MAX_HISTORY_ENTRIES:
+            self._nci_reports = self._nci_reports[-self.MAX_HISTORY_ENTRIES:]
+        self.persistence.save_nci_reports(self._nci_reports)
 
     def toggle_mic(self):
         """Consolidates what StateBridge.toggleMic() used to do directly

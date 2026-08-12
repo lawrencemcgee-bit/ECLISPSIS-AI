@@ -15,6 +15,8 @@ class PersistenceService:
         self.memory_path = os.path.join(self.base_dir, "memory.json")
         self.permissions_path = os.path.join(self.base_dir, "permissions.json")
         self.automations_path = os.path.join(self.base_dir, "automations.json")
+        self.nci_reports_path = os.path.join(self.base_dir, "nci_reports.json")
+        self.vision_captures_path = os.path.join(self.base_dir, "vision_captures.json")
 
         self._ensure_dirs()
 
@@ -97,4 +99,30 @@ class PersistenceService:
     def save_automations(self, automations: dict):
         with open(self.automations_path, "w") as f:
             json.dump(automations, f, indent=4)
+
+    # -----------------------------
+    # NCI report history (Tier 3 — batch/persistence endpoints)
+    # -----------------------------
+    def load_nci_reports(self):
+        if not os.path.exists(self.nci_reports_path):
+            return []
+        with open(self.nci_reports_path, "r") as f:
+            return json.load(f)
+
+    def save_nci_reports(self, reports: list):
+        with open(self.nci_reports_path, "w") as f:
+            json.dump(reports, f, indent=4)
+
+    # -----------------------------
+    # Vision capture history (Tier 3 — batch/persistence endpoints)
+    # -----------------------------
+    def load_vision_captures(self):
+        if not os.path.exists(self.vision_captures_path):
+            return []
+        with open(self.vision_captures_path, "r") as f:
+            return json.load(f)
+
+    def save_vision_captures(self, captures: list):
+        with open(self.vision_captures_path, "w") as f:
+            json.dump(captures, f, indent=4)
 

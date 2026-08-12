@@ -8,19 +8,20 @@ instance" principle Phase 2 fixed for the desktop bootstrap
 
 Endpoints implemented here cover only capabilities that actually exist
 elsewhere in the codebase (process_message, analyze, capture_vision,
-plugins, diagnostics, permissions). /nci/score, /social/analyze,
-/coding/analyze, /coding/diff, and /creative/* are backed by real local
-logic (src/services/nci_service.py, social_content_service.py,
-coding_service.py, creative_content_service.py) as of Tier 3 — none of
-them call an external API or execute the content/code they're given (see
-each service's module docstring). /creative/* in particular is template/
-heuristic-based, not an LLM — see creative_content_service.py's module
-docstring for what that means for the honesty of its output. Endpoints
-named in the original design prompt but still backed by functionality
-that doesn't exist yet — batch NCI scoring, latest-report/persisted
-history — return 501 Not Implemented with an explanatory body instead of
-either faking a result or silently omitting the route. A client hitting
-them gets a clear, typed answer instead of a generic 404.
+plugins, diagnostics, permissions). /nci/score, /nci/batch, /nci/latest,
+/vision/analyze, /vision/latest, /social/analyze, /coding/analyze,
+/coding/diff, and /creative/* are backed by real local logic
+(src/services/nci_service.py, social_content_service.py,
+coding_service.py, creative_content_service.py, plus persisted history
+in AssistantCore/PersistenceService for the batch/latest endpoints) as
+of Tier 3 — none of them call an external API or execute the
+content/code they're given (see each service's module docstring).
+/creative/* in particular is template/heuristic-based, not an LLM — see
+creative_content_service.py's module docstring for what that means for
+the honesty of its output. No endpoint here is a 501 stub anymore; the
+pattern is kept below (_not_implemented) for any future endpoint that
+genuinely has no backing implementation yet, so a client gets a clear,
+typed answer instead of either a faked result or a generic 404.
 
 Permission endpoints (/permissions, /permissions/grant|deny|revoke)
 weren't in the original endpoint list, but a remote client has no other
@@ -56,6 +57,16 @@ class NCIScoreRequest(BaseModel):
     text: str | None = None
     url: str | None = None
     topic: str | None = None
+
+
+class NCIBatchItem(BaseModel):
+    text: str | None = None
+    url: str | None = None
+    topic: str | None = None
+
+
+class NCIBatchRequest(BaseModel):
+    items: list[NCIBatchItem]
 
 
 class SocialAnalyzeRequest(BaseModel):
@@ -182,12 +193,16 @@ def create_app(assistant: AssistantCore, api_keys: ApiKeyService = None) -> Fast
             raise HTTPException(status_code=422, detail={"error": str(exc)})
 
     @app.post("/nci/batch")
-    def post_nci_batch():
-        _not_implemented("nci.batch", "NCIService has no batch-scoring mode yet.")
+    def post_nci_batch(body: NCIBatchRequest):
+        items = [item.model_dump() for item in body.items]
+        try:
+            return {"results": assistant.analyze_batch(items)}
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail={"error": str(exc)})
 
     @app.get("/nci/latest")
-    def get_nci_latest():
-        _not_implemented("nci.latest", "NCI reports are not persisted yet — nothing to retrieve.")
+    def get_nci_latest(limit: int = 10):
+        return {"reports": assistant.get_latest_nci_reports(limit)}
 
     @app.post("/vision/analyze")
     def post_vision_analyze():
@@ -200,8 +215,8 @@ def create_app(assistant: AssistantCore, api_keys: ApiKeyService = None) -> Fast
         return {"result": result}
 
     @app.get("/vision/latest")
-    def get_vision_latest():
-        _not_implemented("vision.latest", "Vision analysis results are not persisted yet.")
+    def get_vision_latest(limit: int = 10):
+        return {"captures": assistant.get_latest_vision_captures(limit)}
 
     @app.post("/social/analyze")
     def post_social_analyze(body: SocialAnalyzeRequest):

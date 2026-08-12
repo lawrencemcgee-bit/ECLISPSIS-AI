@@ -572,6 +572,89 @@ class Phase8NCI(unittest.TestCase):
             self.assertEqual(result["label"], "unscoreable")
             self.assertIn("reason", result)
 
+    def test_analyze_persists_and_get_latest_returns_recent_first(self):
+        """Tier 3: NCI reports are now persisted (PersistenceService) and
+        retrievable via get_latest_nci_reports() — batch/persistence
+        endpoints backing this were the whole point of this addition."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.analyze("first report")
+            assistant.analyze("second report, somewhat longer than the first one")
+
+            latest = assistant.get_latest_nci_reports(limit=5)
+            self.assertEqual(len(latest), 2)
+            self.assertIn("timestamp", latest[0])
+            self.assertIn("result", latest[0])
+            # Most recent first — the second (longer) call was scored last.
+            self.assertGreater(
+                latest[0]["result"]["stats"]["word_count"],
+                latest[1]["result"]["stats"]["word_count"],
+            )
+
+    def test_analyze_history_survives_across_instances(self):
+        """Persistence, not just an in-memory list — a fresh AssistantCore
+        pointed at the same working directory should see prior history."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant1 = AssistantCore()
+            assistant1.analyze("persisted report")
+
+            assistant2 = AssistantCore()
+            latest = assistant2.get_latest_nci_reports()
+            self.assertEqual(len(latest), 1)
+
+    def test_analyze_history_is_capped(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            for i in range(assistant.MAX_HISTORY_ENTRIES + 10):
+                assistant.analyze(f"report {i}")
+            self.assertEqual(len(assistant._nci_reports), assistant.MAX_HISTORY_ENTRIES)
+
+    def test_analyze_batch_scores_each_item(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            results = assistant.analyze_batch([
+                {"text": "first item"},
+                {"text": "second item", "topic": "second"},
+            ])
+            self.assertEqual(len(results), 2)
+            self.assertIn("relevance", results[1]["breakdown"])
+            self.assertNotIn("relevance", results[0]["breakdown"])
+
+    def test_analyze_batch_rejects_empty_and_oversized(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            with self.assertRaises(ValueError):
+                assistant.analyze_batch([])
+            with self.assertRaises(ValueError):
+                assistant.analyze_batch([{"text": "x"}] * (assistant.MAX_BATCH_SIZE + 1))
+
+    def test_vision_capture_persists_and_get_latest_returns_recent_first(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.grant_permission("access_camera")
+            assistant.capture_vision()
+            assistant.capture_vision()
+
+            latest = assistant.get_latest_vision_captures(limit=5)
+            self.assertEqual(len(latest), 2)
+            self.assertIn("timestamp", latest[0])
+            self.assertIn("result", latest[0])
+
+    def test_vision_capture_denied_permission_not_recorded(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            assistant.deny_permission("access_camera")
+            result = assistant.capture_vision()
+            self.assertIsNone(result)
+            self.assertEqual(assistant.get_latest_vision_captures(), [])
+
     def test_analyze_not_wired_into_process_message(self):
         """Deliberate design check, not just a behavior check: analyze()
         must stay a standalone, explicitly-invoked capability. If a future
@@ -874,20 +957,49 @@ class Phase11CrossPlatformAPI(unittest.TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIsInstance(resp.json(), list)
 
-    def test_unimplemented_endpoints_return_501_not_404_or_fake_data(self):
-        """Tier 3: /social/analyze moved out of this list — SocialAgent
-        now backs it for real, tested separately below."""
+    def test_nci_batch_and_latest_endpoints(self):
+        """Tier 3: /nci/batch and /nci/latest moved out of the 501 list —
+        AssistantCore.analyze_batch()/get_latest_nci_reports() back them
+        for real now, with persisted history. No general 501-stub test
+        remains since every originally-stubbed endpoint now has a real
+        backing implementation; the _not_implemented() helper itself
+        stays in api_app.py for any future endpoint that doesn't."""
         with _isolated_cwd():
             client, assistant = self._client()
-            cases = (
-                ("post", "/nci/batch"),
-                ("get", "/nci/latest"),
-                ("get", "/vision/latest"),
+            resp = client.post("/nci/batch", json={"items": [
+                {"text": "Short piece one."},
+                {"text": "Short piece two, with quite a bit more length added to it."},
+            ]})
+            self.assertEqual(resp.status_code, 200)
+            results = resp.json()["results"]
+            self.assertEqual(len(results), 2)
+
+            latest = client.get("/nci/latest").json()["reports"]
+            self.assertEqual(len(latest), 2)
+            # Most recent first: the second (longer) text was scored last.
+            self.assertGreater(
+                latest[0]["result"]["stats"]["word_count"],
+                latest[1]["result"]["stats"]["word_count"],
             )
-            for method, path in cases:
-                resp = getattr(client, method)(path)
-                self.assertEqual(resp.status_code, 501, f"{path} should be 501")
-                self.assertIn("feature", resp.json()["detail"])
+
+    def test_nci_batch_rejects_oversized_batch(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            items = [{"text": "x"}] * (assistant.MAX_BATCH_SIZE + 5)
+            resp = client.post("/nci/batch", json={"items": items})
+            self.assertEqual(resp.status_code, 422)
+
+    def test_vision_latest_endpoint_returns_history(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            assistant.grant_permission("access_camera")
+            client.post("/vision/analyze")
+            client.post("/vision/analyze")
+
+            latest = client.get("/vision/latest").json()["captures"]
+            self.assertEqual(len(latest), 2)
+            self.assertIn("timestamp", latest[0])
+            self.assertIn("result", latest[0])
 
     def test_social_analyze_endpoint(self):
         with _isolated_cwd():

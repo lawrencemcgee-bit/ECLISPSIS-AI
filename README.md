@@ -154,7 +154,7 @@ python -m unittest test_all_phases.Phase9Observability -v
 | QML UI | Deprecated — kept as a fallback, no further work planned |
 | Voice (STT/TTS/mic capture) | **Real, confirmed working end-to-end live in Nova** (`vosk`/`pyttsx3`/`sounddevice` + a Vosk model) — falls back to simulated/no-op if not installed |
 | Vision | **Real camera capture** (OpenCV) with graceful fallback to simulated if unavailable — local pixel-level analysis (brightness, sharpness, dominant channel), not ML object/scene recognition |
-| NCI (content analysis/scoring) | **Real local heuristic scorer** — quality (depth/evidence/readability/vocabulary) always, topic relevance when a topic is given; accepts raw text or a fetched URL |
+| NCI (content analysis/scoring) | **Real local heuristic scorer** — quality (depth/evidence/readability/vocabulary) always, topic relevance when a topic is given; accepts raw text or a fetched URL; results persisted, `/nci/batch` and `/nci/latest` real |
 | Coding agent | **Real local static analysis** (`ast`/`difflib`) — syntax, structure, docstring coverage, diffing; never executes code |
 | Social-media agent | **Real local post analysis** — length vs. platform limits, hashtags/mentions/links, engagement heuristics; no posting/publishing (no OAuth infra) |
 | Browser agent | Does not exist yet — deliberately deferred |
@@ -221,17 +221,19 @@ test_all_phases.py — The regression suite
 | 13 | Final Validation | Done |
 
 **Post-roadmap work in progress** (not part of the original 14 phases):
-Flet UI migration (Nova and Lyra both built and at feature parity),
-real voice I/O (confirmed working end-to-end), real NCI scoring, a real
-vision pipeline, real Coding/Social/Creative agents, API-key auth on
-the HTTP API, multi-step (`sequence`) automation actions, and Flet
-packaging configuration (`nova_main.py`/`lyra_main.py` +
-`docs/flet_packaging.md` — build commands verified to parse/initialize
-correctly; the actual native compile needs to run on a machine that can
-reach the Flutter SDK) — all shipped in Tier 3. Still unbuilt/unrun: a
-browser agent (deliberately deferred), HTTP endpoints for automation
-management, a few batch/persistence-backed endpoints (`/nci/batch`,
-`/nci/latest`, `/vision/latest`), and actually executing the Flet build
+Flet UI migration (Nova and Lyra both built and at feature parity, Lyra
+confirmed via a real live launch test — see
+`docs/architecture_baseline.md` §13), real voice I/O (confirmed working
+end-to-end), real NCI scoring, a real vision pipeline, real
+Coding/Social/Creative agents, API-key auth on the HTTP API, multi-step
+(`sequence`) automation actions, Flet packaging configuration
+(`nova_main.py`/`lyra_main.py` + `docs/flet_packaging.md` — build
+commands verified to parse/initialize correctly; the actual native
+compile needs to run on a machine that can reach the Flutter SDK), and
+persisted batch/history endpoints for NCI and vision (`/nci/batch`,
+`/nci/latest`, `/vision/latest`) — all shipped in Tier 3. Still
+unbuilt/unrun: a browser agent (deliberately deferred), HTTP endpoints
+for automation management, and actually executing the Flet build
 commands on a machine with full internet access. See
-`docs/architecture_baseline.md` §11–12 for the full known-limitations
+`docs/architecture_baseline.md` §11–13 for the full known-limitations
 list.

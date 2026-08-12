@@ -99,7 +99,7 @@ used starting Milestone 11 (request/response models in `src/api/api_app.py`).
 | NCIService | Real local heuristic scorer — see `nci_service.py`. Scores quality (depth, evidence density, readability, vocabulary) always, plus topic relevance when a topic is supplied. Accepts raw text or a fetched URL. No external LLM call. |
 | ObservabilityService (Milestone 9) | Real — event-driven counters, last-error, system metrics |
 | PermissionService / SafetyRules (Milestone 10) | Real — fail-closed by default, persisted grants |
-| Cross-platform API (Milestone 11) | Real for existing capabilities, including `/social/analyze`, `/coding/analyze`, `/coding/diff` as of Tier 3; `501`s remain for nci/batch, nci/latest, vision/latest — no persisted-history/batch logic exists for those yet. Every route now requires an API key — see `ApiKeyService` below. |
+| Cross-platform API (Milestone 11) | Real for existing capabilities, including `/social/analyze`, `/coding/analyze`, `/coding/diff` as of Tier 3, plus `/nci/batch`, `/nci/latest`, `/vision/latest` (persisted history + batch scoring) — no `501` stubs remain among the original endpoint list. Every route requires an API key — see `ApiKeyService` below. |
 | AutomationService (Milestones 12–13) | Real — event/schedule triggers, persisted, ticked by a background thread in both entry points |
 
 ## 8. Concurrency & UI Thread Safety
@@ -210,9 +210,16 @@ afterward (72 passed / 7 skipped, same skip count as before).
   `MAX_SEQUENCE_STEPS`); `stop_on_error` (default `True`) controls
   whether a failing step halts the rest. See
   `AssistantCore._execute_sequence_action`.
-- `/nci/batch`, `/nci/latest`, `/vision/latest` remain `501` — batch
-  scoring and persisted history have no backing implementation yet, even
-  though single-shot NCI scoring and vision capture are now real.
+- ~~`/nci/batch`, `/nci/latest`, `/vision/latest` remain `501`~~ — fixed
+  in Tier 3. History is persisted via `PersistenceService`
+  (`data/nci_reports.json`, `data/vision_captures.json`), capped at
+  `AssistantCore.MAX_HISTORY_ENTRIES` (50, oldest entries roll off);
+  `/nci/batch` is capped at `MAX_BATCH_SIZE` (20) items per call, each
+  scored via the same `analyze()` path a single call uses (a bad
+  URL/item degrades to an "unscoreable" result, never raises and never
+  takes the rest of the batch down with it). See
+  `AssistantCore.analyze_batch`/`get_latest_nci_reports`/
+  `get_latest_vision_captures`.
 - No browser agent (URL fetch-and-read) — deliberately skipped when
   Coding/Social/Creative agents were built; the NCI service already does
   URL fetching internally (`_fetch_url`) but there's no standalone agent
@@ -248,13 +255,53 @@ real Coding/Social/Creative agents (`coding_service.py`,
 post analysis, no posting; `creative_content_service.py`,
 template/procedural generation + heuristic critique, no LLM), API-key
 auth on the HTTP API (`api_key_service.py`), multi-step (`sequence`)
-automation actions, and Flet packaging configuration (`nova_main.py`,
+automation actions, Flet packaging configuration (`nova_main.py`,
 `lyra_main.py`, `docs/flet_packaging.md` — commands verified to parse
 and initialize correctly; the actual compile still needs to run on a
 machine that can reach the Flutter SDK, since this project's sandbox
-couldn't). What remains: a browser agent, HTTP endpoints for automation
-management, the batch/persistence-backed NCI and vision endpoints
-(`/nci/batch`, `/nci/latest`, `/vision/latest`), and actually running
+couldn't), persisted batch/history endpoints for NCI and vision
+(`/nci/batch`, `/nci/latest`, `/vision/latest`), and a hands-on live
+launch test of Lyra (§13 — real server boot, real session/websocket
+handshake, real rendered UI, zero errors). What remains: a browser
+agent, HTTP endpoints for automation management, and actually running
 the Flet build commands on a real machine to confirm they produce a
 working artifact end-to-end. These don't have phase numbers yet — worth
 a fresh planning pass to sequence them.
+
+## 13. Lyra Live Launch Verification (Tier 3)
+Prior "Lyra parity" work (Tier 2) confirmed Lyra's app factory
+constructs correctly and matches Nova's structure — but that was a
+construction/API-level check, not proof the app actually boots and
+renders. This section is that proof, done for real rather than assumed:
+
+- Ran `lyra_main.py`'s target function through `ft.run(..., view=WEB_BROWSER,
+  host="127.0.0.1", port=8551)` in a background process.
+- **Real finding along the way**: Flet's web view needs the separate
+  `flet-web` package, which Flet tries to auto-install via a plain
+  `pip install` — that install fails in an externally-managed Python
+  environment (PEP 668) the same way every other dependency install in
+  this project needs `--break-system-packages`. `flet-web` is not yet a
+  listed dependency anywhere in this repo; add it explicitly if `--web`
+  mode is going to be used regularly (`pyproject.toml`/`requirements.txt`
+  currently only list `flet`/`flet-cli`).
+- Confirmed the HTTP layer serves a real Flet bootstrap page (200,
+  genuine Flutter/websocket loader HTML, not an error page), stable
+  across repeated requests.
+- Went further than the HTTP layer: hand-built Flet's actual wire
+  protocol (binary WebSocket frames, `[0x00] + msgpack([action_code,
+  body])`, `ClientAction.REGISTER_CLIENT = 1`, `RegisterClientRequestBody`
+  schema) to open a real client session against the running server —
+  the same handshake a real browser performs, not a mocked one.
+- The server responded with a real session ID, a page patch setting
+  `title: "LYRA — ECLIPSIS-AI"` and Lyra's dark theme (`#E8A96B` amber
+  accent), the persisted window-geometry defaults (960×540 at 100,100),
+  and a full control-tree patch building Lyra's actual console UI
+  (avatar container with icon, amber border/animation, "LYRA" label
+  text) — genuine server-rendered application state, not a static
+  placeholder.
+- Zero tracebacks or errors in server-side stderr through the entire
+  exchange. Process was cleanly killed afterward; no lingering state
+  left outside the throwaway working directory used for the test.
+
+This confirms Lyra launches and runs correctly, not just that its code
+imports without raising.

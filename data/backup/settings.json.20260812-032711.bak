@@ -1,10 +1,10 @@
 {
     "theme": "dark",
-    "last_agent": "news",
+    "last_agent": "onenote",
     "mic_enabled": true,
     "window": {
         "width": 960.0,
-        "height": 1228.0,
+        "height": 1232.0,
         "x": 1208.0,
         "y": 67.0,
         "maximized": false
