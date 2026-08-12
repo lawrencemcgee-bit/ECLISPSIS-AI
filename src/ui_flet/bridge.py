@@ -328,11 +328,28 @@ class FletBridge:
         (Phase 10) — AssistantCore.capture_vision() returns None on denial
         and already emits "vision.blocked", which __init__ subscribes to
         for the toast. This just handles the success case: push the
-        result into chat like an agent response."""
+        result into chat like an agent response.
+
+        Tier 3: VisionService.capture() returns a structured dict now
+        (real capture) instead of a fixed placeholder string, so this
+        formats a short human-readable line instead of dumping a raw
+        dict repr into the transcript."""
         result = self.assistant.capture_vision()
         if result is not None:
-            self._push_chat("vision", str(result))
+            self._push_chat("vision", self._format_vision_result(result))
         return result
+
+    @staticmethod
+    def _format_vision_result(result: dict) -> str:
+        if result.get("simulated"):
+            return f"[simulated capture] {result.get('reason', 'No camera available.')}"
+        res = result.get("resolution", {})
+        return (
+            f"Captured {res.get('width')}x{res.get('height')} frame — "
+            f"brightness {result.get('brightness')}, sharpness {result.get('sharpness')}, "
+            f"dominant channel: {result.get('dominant_channel')} "
+            f"(saved to {result.get('path')})"
+        )
 
     def _start_waveform_task(self):
         if self._waveform_task is not None or self.waveform is None:

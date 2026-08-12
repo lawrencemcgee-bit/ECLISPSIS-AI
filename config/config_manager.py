@@ -1,8 +1,6 @@
-from pathlib import Path
-from typing import Optional
 
-from pydantic import BaseSettings
 from dotenv import load_dotenv
+from pydantic import BaseSettings
 
 
 class AppSettings(BaseSettings):
@@ -15,7 +13,7 @@ class AppSettings(BaseSettings):
 
 
 class ConfigManager:
-    _settings: Optional[AppSettings] = None
+    _settings: AppSettings | None = None
 
     @classmethod
     def load(cls) -> AppSettings:

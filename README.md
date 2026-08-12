@@ -148,19 +148,21 @@ python -m unittest test_all_phases.Phase9Observability -v
 | Permissions & safety policy | Real — fails closed by default, decisions persist |
 | Observability (metrics, diagnostics, health) | Real |
 | Automation (event & schedule triggers) | Real — persists, ticked by a background thread |
-| Cross-platform HTTP API | Real for the above; explicit `501`s for capabilities that don't exist yet (see below) |
+| Cross-platform HTTP API | Real for the above; API-key auth on every route (`X-API-Key`, see `src/api/api_key_service.py`); explicit `501`s for capabilities that don't exist yet (see below) |
 | Flet UI (Nova) | Real — chat, agent tray, mic/camera, reactive orb; window-restore-across-restart not yet confirmed |
-| QML UI | Real, but no longer the active development target |
+| QML UI | Deprecated — kept as a fallback, no further work planned |
 | Voice (STT/TTS/mic capture) | **Real, confirmed working end-to-end live in Nova** (`vosk`/`pyttsx3`/`sounddevice` + a Vosk model) — falls back to simulated/no-op if not installed |
-| Vision | Wired correctly through permissions; camera capture itself is still a **placeholder**, no real pipeline |
-| NCI (content analysis/scoring) | Returns input text back — **no real scoring model yet** |
-| Coding / social-media / browser agents | **Do not exist yet** |
-| Creative-content generation | **Does not exist yet** |
+| Vision | **Real camera capture** (OpenCV) with graceful fallback to simulated if unavailable — local pixel-level analysis (brightness, sharpness, dominant channel), not ML object/scene recognition |
+| NCI (content analysis/scoring) | **Real local heuristic scorer** — quality (depth/evidence/readability/vocabulary) always, topic relevance when a topic is given; accepts raw text or a fetched URL |
+| Coding agent | **Real local static analysis** (`ast`/`difflib`) — syntax, structure, docstring coverage, diffing; never executes code |
+| Social-media agent | **Real local post analysis** — length vs. platform limits, hashtags/mentions/links, engagement heuristics; no posting/publishing (no OAuth infra) |
+| Browser agent | Does not exist yet — deliberately deferred |
+| Creative-content generation | **Real template/procedural generation** (headlines, writing prompts, outlines) + heuristic critique (passive voice, cliches, filler words) — no LLM anywhere in this codebase |
 
 ## Project Structure
 
 ```
-src/agents/    — OneNote, Weather, News agents + registry
+src/agents/    — OneNote, Weather, News, Coding, Social, Creative agents + registry
 src/api/       — FastAPI app factory
 src/core/      — AssistantCore + all core services (event bus, memory,
                  permissions, verification, safety rules, observability,
@@ -218,8 +220,11 @@ test_all_phases.py — The regression suite
 | 13 | Final Validation | Done |
 
 **Post-roadmap work in progress** (not part of the original 14 phases):
-Flet UI migration (Nova built and smoke-tested; Lyra a lighter unmaintained
-skeleton), real voice I/O (built, not yet machine-verified end-to-end).
-Still fully unbuilt: real NCI scoring, a real vision pipeline, new agents
-(coding/social-media/browser), a creative-content layer. See
-`docs/architecture_baseline.md` §11–12 for the full known-limitations list.
+Flet UI migration (Nova and Lyra both built and at feature parity),
+real voice I/O (confirmed working end-to-end), real NCI scoring, a real
+vision pipeline, real Coding/Social/Creative agents, and API-key auth on
+the HTTP API — all shipped in Tier 3. Still unbuilt: a browser agent
+(deliberately deferred), multi-step automations, and a few
+batch/persistence-backed endpoints (`/nci/batch`, `/nci/latest`,
+`/vision/latest`). See `docs/architecture_baseline.md` §11–12 for the
+full known-limitations list.

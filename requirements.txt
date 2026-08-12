@@ -27,6 +27,12 @@ scipy
 vosk
 pyttsx3
 
+# Real vision capture (Tier 3 — see src/services/vision_service.py).
+# Optional at runtime; graceful fallback to simulated behavior if not
+# installed or no camera is available. Pulls in numpy as its own
+# dependency.
+opencv-python-headless
+
 # System diagnostics (Phase 9) — optional at runtime; ObservabilityService
 # degrades gracefully to {"available": False} if this isn't installed.
 psutil

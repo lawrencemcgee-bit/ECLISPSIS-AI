@@ -6,11 +6,19 @@ Milestone 1. This refresh reflects the actual current state.
 
 **Tier 2 repo-hygiene update**: `src/ui/` (QML/PySide6) is now formally
 **deprecated** — kept as a fallback, no further work planned. See
-`src/ui/DEPRECATED.md`. The five orphaned files flagged in §9 below have
-been deleted (`src/core/persistence.py`, `src/ui/plugin_panel.qml`,
-`src/ui/tk_stabilization.py`, `config/config_manager.py`,
-`config/settings.yaml`); §9 is left below as a historical record of what
-was found and why each was safe to remove, rather than rewritten away.
+`src/ui/DEPRECATED.md`. Of the five files originally flagged as orphaned
+in §9 below, four were confirmed unreferenced and deleted
+(`src/core/persistence.py`, `src/ui/tk_stabilization.py`,
+`config/config_manager.py`, `config/settings.yaml`). The fifth,
+`src/ui/plugin_panel.qml`, turned out to still be live-wired into
+`main_window.qml`'s Plugins toggle button — the original orphaned-file
+assessment was wrong about that one — so it was restored rather than
+deleted. §9 is left below as a historical record of what was found and
+why, with that correction noted inline.
+
+**Tier 3 update**: `NCIService` and `VisionService` are no longer
+placeholder-level, and real `CodingAgent`/`SocialAgent` have been added
+(a browser agent was deliberately deferred) — see §7.
 
 ## 1. Overview
 14-phase roadmap (0–13), all phases now have working code and passing
@@ -21,13 +29,15 @@ API (`api.py` → `src/api/api_app.py`). ~2,400 lines across `src/`.
 **Important distinction**: this roadmap was about architecture and
 plumbing — event bus, agents, memory, permissions, observability,
 automation, a cross-platform API — not about the domain engines the
-original product vision describes. Several of those (real NCI scoring,
-a real vision pipeline, real STT/TTS, coding/social/browser agents, a
-creative-content layer) remain placeholder-level. See §7 and §11.
+original product vision describes. Real voice I/O, real NCI scoring,
+and a real vision pipeline have since been added on top of that
+plumbing (Tier 3), along with real Coding, Social, and Creative-content
+agents; a browser agent remains placeholder-level (deliberately
+deferred). See §7 and §11.
 
 ## 2. Repository Structure
 ```
-src/agents/       — OneNote, Weather, News agents + registry
+src/agents/       — OneNote, Weather, News, Coding, Social, Creative agents + registry
 src/api/          — FastAPI app factory (Phase 11)
 src/core/         — AssistantCore + all core services (event bus, memory,
                      permissions, verification, safety rules, observability,
@@ -80,16 +90,16 @@ used starting Milestone 11 (request/response models in `src/api/api_app.py`).
 | Subsystem | Status |
 |---|---|
 | LocalEngine / ConversationService | Real, tested |
-| AgentRouter + 3 agents (OneNote/Weather/News) | Real, tested |
+| AgentRouter + 6 agents (OneNote/Weather/News/Coding/Social/Creative) | Real, tested. Coding is local static analysis (ast/difflib) — never executes code, respecting SafetyRules' permanent `run_shell_command` block. Social is local post analysis — no posting/publishing (no OAuth/API-key infra in this codebase). Creative is template/procedural generation (headlines, writing prompts, outlines) plus heuristic critique (passive voice, cliches, filler words) — no LLM anywhere in this codebase, so generation is assembled from fixed templates, not composed prose; see creative_content_service.py's module docstring. |
 | MemoryService | Real, tested (short + long-term, survives restart) |
 | PersistenceService | Real — settings, chat history, memory, permissions, automations all persisted as JSON |
-| VoiceService | State machine is real; STT/TTS are not — `simulate_command()` |
-| VisionService | Constructed and wired correctly; `capture()` is a placeholder string, no real camera/pipeline |
+| VoiceService | Real STT (Vosk) + TTS (pyttsx3), confirmed working end-to-end — see `docs/voice_io_assessment.md`. Falls back to `simulate_command()` if the backend isn't available. |
+| VisionService | Real camera capture (OpenCV) with graceful fallback to the original simulated placeholder — see `vision_service.py`. Analysis is local pixel-level signals (brightness, sharpness, dominant channel), not ML object/scene recognition. |
 | AudioService | Simulated sine-wave samples, not real mic capture |
-| NCIService | `analyze()`/`interpret()` returns `{"interpreted": text}` — no real scoring model |
+| NCIService | Real local heuristic scorer — see `nci_service.py`. Scores quality (depth, evidence density, readability, vocabulary) always, plus topic relevance when a topic is supplied. Accepts raw text or a fetched URL. No external LLM call. |
 | ObservabilityService (Milestone 9) | Real — event-driven counters, last-error, system metrics |
 | PermissionService / SafetyRules (Milestone 10) | Real — fail-closed by default, persisted grants |
-| Cross-platform API (Milestone 11) | Real for existing capabilities; `501`s for nci/batch, nci/latest, vision/latest, social/analyze — no backing logic exists for those yet |
+| Cross-platform API (Milestone 11) | Real for existing capabilities, including `/social/analyze`, `/coding/analyze`, `/coding/diff` as of Tier 3; `501`s remain for nci/batch, nci/latest, vision/latest — no persisted-history/batch logic exists for those yet. Every route now requires an API key — see `ApiKeyService` below. |
 | AutomationService (Milestones 12–13) | Real — event/schedule triggers, persisted, ticked by a background thread in both entry points |
 
 ## 8. Concurrency & UI Thread Safety
@@ -136,28 +146,32 @@ actual failure):
 
 Confirmed orphaned/unused code, found while working through Milestones
 9–13 (fixed where fixing was in scope; flagged rather than silently
-deleted where it wasn't). **Update — deleted in the Tier 2 repo-hygiene
-pass**, since none were imported anywhere and each had a confirmed,
-understood reason for existing:
+deleted where it wasn't). **Update — Tier 2 repo-hygiene pass**: four of
+these were confirmed unimported anywhere and deleted; the fifth
+(`plugin_panel.qml`) was found to still be live-wired and restored
+instead — see the correction inline below.
 - `src/core/observability.py` — **fixed in Milestone 9** (was dead, now real; not part of this deletion)
 - `src/core/persistence.py` — **deleted**. A separate, smaller, unused
   early draft of what `persistence_service.py` (the one actually used
   everywhere) became.
-- `src/ui/plugin_panel.qml` — **deleted**. Python code with a `.qml`
-  extension; a stale duplicate of an early `assistant_core.py` missing
-  everything from Milestone 6 onward. Harmless (invalid QML, never
-  loaded) but confusing. Flagged in the Milestone 10 report.
+- `src/ui/plugin_panel.qml` — **initially flagged as a stale duplicate
+  and deleted, then restored.** The original assessment ("Python code
+  with a `.qml` extension ... never loaded") was wrong: `main_window.qml`
+  actually loads it via a `Loader` (`pluginLoader`, source
+  `"plugin_panel.qml"`) behind a visible "Plugins" toggle button. Deleting
+  it would have silently broken that button in the QML fallback the first
+  time someone clicked it. Kept as part of the deprecated QML tree.
 - `src/ui/tk_stabilization.py` — **deleted**. A Milestone 1
   CustomTkinter placeholder from before the QML decision was made.
 - `config/config_manager.py`, `config/settings.yaml` — **deleted**. Not
   imported anywhere in `src/`; the `config/` directory itself is now
   gone since it held only these two files.
 
-None of these were wired into any active code path, so deleting them
-does not affect runtime behavior. Confirmed via `grep` across `src/`,
-`run.py`, `api.py`, and `flet_run.py` before removal, and via a full
-`test_all_phases.py` run afterward (still 77 tests, same pass/skip
-counts).
+Four of the five were not wired into any active code path, so deleting
+them does not affect runtime behavior; the fifth was wired in and is
+kept. Confirmed via `grep` across `src/`, `run.py`, `api.py`, and
+`flet_run.py` before removal, and via a full `test_all_phases.py` run
+afterward (72 passed / 7 skipped, same skip count as before).
 
 ## 10. Tests, Static Analysis, CI
 - **`test_all_phases.py`** is the actual regression suite — plain
@@ -177,27 +191,43 @@ counts).
   (`ruff.toml`, `mypy.ini`) were found, so both would run with defaults.
 
 ## 11. Known Limitations
-- Domain engines remain placeholder-level: real NCI scoring and a real
-  vision pipeline, and the coding/social-media/browser agents and
-  creative-content layer described in the original re-engineering
-  prompt, were never part of this 14-phase roadmap and remain unbuilt.
-  (Real voice I/O — STT/TTS — is no longer on this list; confirmed
-  working end-to-end, see `docs/voice_io_assessment.md`.)
-- No auth on the HTTP API (Milestone 11's known limitation, unchanged).
-- The five orphaned files formerly in §9 have been deleted (Tier 2).
+- Domain engines that remain placeholder-level: a browser agent
+  (fetch-and-read a URL) — deliberately deferred, not built. Everything
+  else from the original re-engineering prompt's domain-engine list
+  (real voice I/O, real NCI scoring, a real vision pipeline, real
+  Coding/Social/Creative agents) has shipped in Tier 3; see §7.
+- ~~No auth on the HTTP API~~ — fixed in Tier 3. Every route requires an
+  `X-API-Key` header (src/api/api_key_service.py); a bootstrap key is
+  generated and printed to stderr on first run, `/auth/keys` manages
+  additional keys, and a full lockout self-heals on the next restart.
+- Four of the five orphaned files formerly in §9 have been deleted
+  (Tier 2); the fifth (`plugin_panel.qml`) was restored — see §9.
 - `src/ui/` (QML/PySide6) is now deprecated — see `src/ui/DEPRECATED.md`.
 - `AutomationService` actions are limited to `notify`/`message`/`agent`/
   `plugin` — no way yet to, say, run a multi-step automation.
-- Lyra (the second Flet persona) is a lighter skeleton than Nova — no
-  pulse loop, no waveform, default chat builder — and isn't currently
-  being brought to parity.
+- `/nci/batch`, `/nci/latest`, `/vision/latest` remain `501` — batch
+  scoring and persisted history have no backing implementation yet, even
+  though single-shot NCI scoring and vision capture are now real.
+- No browser agent (URL fetch-and-read) — deliberately skipped when
+  Coding/Social/Creative agents were built; the NCI service already does
+  URL fetching internally (`_fetch_url`) but there's no standalone agent
+  exposing that as a general-purpose capability.
+- Creative-content generation is template/procedural (fixed headline
+  templates, curated writing-prompt word lists, fixed outline
+  structures per content type), not composed prose — there's no LLM
+  anywhere in this codebase, by design. See
+  `creative_content_service.py`'s module docstring.
 
 ## 12. Next Steps
-The original 14-phase roadmap (Milestones 0–13) is complete, and the
-Tier 2 repo-hygiene pass (QML deprecation, orphaned-file removal) is
-done. What remains is the domain-engine work that roadmap was always
-scoped around, not through: real NCI scoring, a real vision pipeline,
-new agents (coding, social-media, browser), the creative-content layer,
-API authentication, multi-step automations, and Lyra parity. These
-don't have phase numbers yet — worth a fresh planning pass to sequence
-them.
+The original 14-phase roadmap (Milestones 0–13) is complete, the Tier 2
+repo-hygiene pass is done, and Lyra has been brought to feature parity
+with Nova. Tier 3 has shipped real NCI scoring, a real vision pipeline,
+real Coding/Social/Creative agents (`coding_service.py`,
+`ast`/`difflib`-based, no execution; `social_content_service.py`, local
+post analysis, no posting; `creative_content_service.py`,
+template/procedural generation + heuristic critique, no LLM), and
+API-key auth on the HTTP API (`api_key_service.py`). What remains: a
+browser agent, multi-step automations, and the batch/persistence-backed
+NCI and vision endpoints (`/nci/batch`, `/nci/latest`, `/vision/latest`).
+These don't have phase numbers yet — worth a fresh planning pass to
+sequence them.

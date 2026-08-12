@@ -28,6 +28,9 @@ import os
 # FORCE_SIMULATED_AUDIO comment.
 os.environ["ECLIPSIS_FORCE_SIMULATED_AUDIO"] = "1"
 os.environ["ECLIPSIS_FORCE_SIMULATED_VOICE"] = "1"
+# Tier 3: same reasoning — VisionService now supports real camera capture
+# via cv2.VideoCapture, which must never be exercised by the test suite.
+os.environ["ECLIPSIS_FORCE_SIMULATED_VISION"] = "1"
 
 import sys
 import ast
@@ -169,6 +172,99 @@ class Phase3AgentArchitecture(unittest.TestCase):
             assistant = AssistantCore()
             result = assistant.agents.run("onenote", action="open")  # missing 'page'
             self.assertIn("error", result.metadata)
+
+    def test_coding_agent_analyzes_python_syntax_error(self):
+        """Tier 3: CodingAgent added — real ast-based static analysis,
+        never executes the code it's given (see coding_service.py's
+        module docstring; SafetyRules permanently blocks
+        run_shell_command and this agent never approaches that path)."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            broken = assistant.agents.run("coding", action="analyze", code="def f(:\n    pass")
+            self.assertFalse(broken.output["valid_syntax"])
+            self.assertIn("syntax_error", broken.output)
+
+            clean = assistant.agents.run(
+                "coding", action="analyze",
+                code="def add(a, b):\n    \"\"\"Add two numbers.\"\"\"\n    return a + b\n",
+            )
+            self.assertTrue(clean.output["valid_syntax"])
+            self.assertEqual(clean.output["function_count"], 1)
+            self.assertEqual(clean.output["docstring_coverage_pct"], 100.0)
+
+    def test_coding_agent_diff(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant.agents.run(
+                "coding", action="diff",
+                old_code="a = 1\n", new_code="a = 1\nb = 2\n",
+            )
+            self.assertEqual(result.output["lines_added"], 1)
+            self.assertEqual(result.output["lines_removed"], 0)
+            self.assertFalse(result.output["identical"])
+
+    def test_social_agent_analyzes_post_content(self):
+        """Tier 3: SocialAgent added — local content analysis only, no
+        posting/publishing (no OAuth/API-key infra exists here; see
+        social_content_service.py's module docstring)."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant.agents.run(
+                "social", text="Check this out! #cool #stuff", platform="twitter",
+            )
+            self.assertEqual(result.output["hashtags"], ["#cool", "#stuff"])
+            self.assertIn("score", result.output)
+
+            over_limit = assistant.agents.run(
+                "social", text="x" * 500, platform="twitter",
+            )
+            self.assertTrue(over_limit.output["over_limit"])
+
+    def test_creative_agent_generates_headlines_deterministically_with_seed(self):
+        """Tier 3: CreativeAgent added — template/procedural generation,
+        no LLM (see creative_content_service.py's module docstring)."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            r1 = assistant.agents.run("creative", action="headlines", topic="gardening", count=3, seed=7)
+            r2 = assistant.agents.run("creative", action="headlines", topic="gardening", count=3, seed=7)
+            self.assertEqual(r1.output["headlines"], r2.output["headlines"])
+            self.assertEqual(len(r1.output["headlines"]), 3)
+            self.assertTrue(all("gardening" in h for h in r1.output["headlines"]))
+
+    def test_creative_agent_writing_prompt_respects_genre(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant.agents.run("creative", action="writing_prompt", genre="sci-fi", seed=3)
+            self.assertEqual(result.output["genre"], "sci-fi")
+            self.assertIn("prompt", result.output)
+
+    def test_creative_agent_outline_known_and_unknown_content_type(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            known = assistant.agents.run("creative", action="outline", topic="x", content_type="how_to_guide")
+            self.assertGreater(len(known.output["sections"]), 0)
+
+            unknown = assistant.agents.run("creative", action="outline", topic="x", content_type="not_a_real_type")
+            self.assertEqual(unknown.output["sections"], [])
+            self.assertIn("note", unknown.output)
+
+    def test_creative_agent_critique_flags_passive_voice_and_cliches(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            text = ("The ball was thrown by John. It was very, very good. "
+                     "At the end of the day, it is what it is. "
+                     "The ball was thrown. The ball was thrown again.")
+            result = assistant.agents.run("creative", action="critique", text=text)
+            self.assertGreaterEqual(result.output["passive_voice_count"], 3)
+            self.assertIn("at the end of the day", result.output["cliches_found"])
+            self.assertTrue(len(result.output["suggestions"]) > 0)
 
 
 # ---------------------------------------------------------------------------
@@ -543,17 +639,23 @@ class Phase9Observability(unittest.TestCase):
 
             # Honesty check: placeholder-level subsystems must say so
             # rather than reporting as if real hardware/backends are
-            # wired up. Vision has no real pipeline yet and is always
-            # simulated. Voice/audio now depend on whether real STT/mic
-            # capture are actually available in THIS environment (a Vosk
-            # model present, PortAudio installed, etc.) — real voice I/O
-            # made these two environment-dependent, so "simulated" must
-            # be checked against actual availability rather than
-            # hardcoded True the way this assertion originally was
-            # (written before real capture existed; a user running this
-            # suite with real capture working correctly hit this exact
-            # stale assumption failing).
-            self.assertTrue(snapshot["subsystems"]["vision"]["simulated"])
+            # wired up. Voice/Audio/Vision all now depend on whether real
+            # capture is actually available in THIS environment (a Vosk
+            # model present, PortAudio installed, a camera opened, etc.)
+            # — real capture made these environment-dependent, so
+            # "simulated" must be checked against actual availability
+            # rather than hardcoded True the way this assertion
+            # originally checked vision (written before real capture
+            # existed for it; a user running this suite with a real
+            # camera working correctly would hit this exact stale
+            # assumption failing). The test suite forces all three to
+            # simulated via ECLIPSIS_FORCE_SIMULATED_* (see top of file),
+            # so these should all read True here regardless of the host
+            # machine's actual hardware.
+            self.assertEqual(
+                snapshot["subsystems"]["vision"]["simulated"],
+                not assistant.vision.camera_available,
+            )
             self.assertEqual(
                 snapshot["subsystems"]["voice"]["simulated"],
                 not assistant.voice.stt_available,
@@ -711,11 +813,23 @@ except ImportError:
 @unittest.skipUnless(_FASTAPI_AVAILABLE, "fastapi/httpx not installed in this environment")
 class Phase11CrossPlatformAPI(unittest.TestCase):
     def _client(self):
+        """Tier 3: every route now requires an API key (see
+        src/api/api_key_service.py). Attaching a valid one here, once,
+        means every existing test below keeps working unchanged — auth
+        itself is exercised separately in
+        Phase11bApiKeyAuthentication below, including the
+        no-key/wrong-key/bootstrap-key paths this helper deliberately
+        doesn't cover."""
         from src.core.assistant_core import AssistantCore
         from src.api.api_app import create_app
+        from src.api.api_key_service import ApiKeyService
         assistant = AssistantCore()
-        app = create_app(assistant)
-        return TestClient(app), assistant
+        key_service = ApiKeyService()
+        bootstrap_key = key_service.generate_key(label="test")
+        app = create_app(assistant, api_keys=key_service)
+        client = TestClient(app)
+        client.headers.update({"X-API-Key": bootstrap_key})
+        return client, assistant
 
     def test_message_endpoint(self):
         with _isolated_cwd():
@@ -761,18 +875,205 @@ class Phase11CrossPlatformAPI(unittest.TestCase):
             self.assertIsInstance(resp.json(), list)
 
     def test_unimplemented_endpoints_return_501_not_404_or_fake_data(self):
+        """Tier 3: /social/analyze moved out of this list — SocialAgent
+        now backs it for real, tested separately below."""
         with _isolated_cwd():
             client, assistant = self._client()
             cases = (
                 ("post", "/nci/batch"),
                 ("get", "/nci/latest"),
                 ("get", "/vision/latest"),
-                ("post", "/social/analyze"),
             )
             for method, path in cases:
                 resp = getattr(client, method)(path)
                 self.assertEqual(resp.status_code, 501, f"{path} should be 501")
                 self.assertIn("feature", resp.json()["detail"])
+
+    def test_social_analyze_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/social/analyze", json={"text": "Hi #test", "platform": "twitter"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["result"]["hashtags"], ["#test"])
+
+    def test_coding_analyze_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/coding/analyze", json={"code": "def f(:\n    pass"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertFalse(resp.json()["result"]["valid_syntax"])
+
+    def test_coding_diff_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/coding/diff", json={"old_code": "a = 1\n", "new_code": "a = 2\n"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["result"]["lines_added"], 1)
+            self.assertEqual(resp.json()["result"]["lines_removed"], 1)
+
+    def test_creative_headlines_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/creative/headlines", json={"topic": "coffee", "count": 3, "seed": 1})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(len(resp.json()["result"]["headlines"]), 3)
+
+    def test_creative_prompt_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/creative/prompt", json={"genre": "fantasy", "seed": 2})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["result"]["genre"], "fantasy")
+
+    def test_creative_outline_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/creative/outline", json={"topic": "coffee", "content_type": "listicle"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertGreater(len(resp.json()["result"]["sections"]), 0)
+
+    def test_creative_critique_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/creative/critique", json={"text": "It was very, very good."})
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("suggestions", resp.json()["result"])
+
+
+@unittest.skipUnless(_FASTAPI_AVAILABLE, "fastapi/httpx not installed in this environment")
+class Phase11bApiKeyAuthentication(unittest.TestCase):
+    """Tier 3: fixes Milestone 11's known limitation that anything
+    reaching the port could call every route (see
+    docs/milestone_11_report.md). Deliberately separate from
+    Phase11CrossPlatformAPI, whose _client() helper attaches a valid key
+    so the rest of that class can focus on endpoint behavior rather than
+    re-proving auth on every single test."""
+
+    def _app_and_assistant(self):
+        from src.core.assistant_core import AssistantCore
+        from src.api.api_app import create_app
+        from src.api.api_key_service import ApiKeyService
+        assistant = AssistantCore()
+        key_service = ApiKeyService()
+        app = create_app(assistant, api_keys=key_service)
+        return app, assistant, key_service
+
+    def test_request_without_key_is_401(self):
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            client = TestClient(app)
+            resp = client.get("/diagnostics")
+            self.assertEqual(resp.status_code, 401)
+
+    def test_request_with_wrong_key_is_401(self):
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            client = TestClient(app)
+            client.headers.update({"X-API-Key": "not-a-real-key"})
+            resp = client.get("/diagnostics")
+            self.assertEqual(resp.status_code, 401)
+
+    def test_first_run_bootstrap_key_is_generated_and_works(self):
+        """Creating the app with no pre-existing keys must generate one
+        (has_any_key() was False) and that exact key — captured from the
+        stderr print, the only channel it's ever exposed on — must
+        authenticate."""
+        import contextlib
+        import io
+        import re
+        with _isolated_cwd():
+            from src.core.assistant_core import AssistantCore
+            from src.api.api_app import create_app
+            from src.api.api_key_service import ApiKeyService
+            assistant = AssistantCore()
+            key_service = ApiKeyService()
+            self.assertFalse(key_service.has_any_key())
+
+            captured = io.StringIO()
+            with contextlib.redirect_stderr(captured):
+                app = create_app(assistant, api_keys=key_service)
+            self.assertTrue(key_service.has_any_key())
+
+            match = re.search(r"^\s{4}(\S+)\s*$", captured.getvalue(), re.MULTILINE)
+            self.assertIsNotNone(match, "bootstrap key not found in stderr output")
+            bootstrap_key = match.group(1)
+
+            client = TestClient(app)
+            client.headers.update({"X-API-Key": bootstrap_key})
+            resp = client.get("/diagnostics")
+            self.assertEqual(resp.status_code, 200)
+
+    def test_valid_key_authenticates(self):
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            raw_key = key_service.generate_key(label="test-client")
+            client = TestClient(app)
+            client.headers.update({"X-API-Key": raw_key})
+            resp = client.get("/diagnostics")
+            self.assertEqual(resp.status_code, 200)
+
+    def test_revoked_key_stops_authenticating(self):
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            raw_key = key_service.generate_key(label="temp")
+            client = TestClient(app)
+            client.headers.update({"X-API-Key": raw_key})
+            self.assertEqual(client.get("/diagnostics").status_code, 200)
+
+            self.assertTrue(key_service.revoke_key(raw_key))
+            self.assertEqual(client.get("/diagnostics").status_code, 401)
+
+    def test_auth_keys_endpoint_creates_and_lists_redacted(self):
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            raw_key = key_service.generate_key(label="admin")
+            client = TestClient(app)
+            client.headers.update({"X-API-Key": raw_key})
+
+            resp = client.post("/auth/keys", json={"label": "mobile-app"})
+            self.assertEqual(resp.status_code, 200)
+            new_key = resp.json()["key"]
+            self.assertTrue(new_key)
+
+            listing = client.get("/auth/keys").json()
+            labels = [k["label"] for k in listing]
+            self.assertIn("mobile-app", labels)
+            self.assertIn("admin", labels)
+            # Redacted: no entry exposes the raw key or its hash.
+            for entry in listing:
+                self.assertEqual(set(entry.keys()), {"label"})
+
+    def test_auth_keys_revoke_endpoint(self):
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            raw_key = key_service.generate_key(label="admin")
+            other_key = key_service.generate_key(label="disposable")
+            client = TestClient(app)
+            client.headers.update({"X-API-Key": raw_key})
+
+            resp = client.post("/auth/keys/revoke", json={"key": other_key})
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(resp.json()["revoked"])
+
+            # The revoked key can no longer authenticate.
+            other_client = TestClient(app)
+            other_client.headers.update({"X-API-Key": other_key})
+            self.assertEqual(other_client.get("/diagnostics").status_code, 401)
+
+    def test_lockout_self_heals_on_restart(self):
+        """If every key is revoked, the NEXT create_app() call (a server
+        restart, in practice) must regenerate a bootstrap key rather than
+        leaving the operator permanently locked out."""
+        with _isolated_cwd():
+            app, assistant, key_service = self._app_and_assistant()
+            for entry in list(key_service._keys.keys()):
+                del key_service._keys[entry]
+            key_service._save()
+            self.assertFalse(key_service.has_any_key())
+
+            from src.api.api_app import create_app
+            create_app(assistant, api_keys=key_service)
+            self.assertTrue(key_service.has_any_key())
 
 
 # ---------------------------------------------------------------------------

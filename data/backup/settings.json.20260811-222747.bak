@@ -1,10 +1,10 @@
 {
     "theme": "dark",
-    "last_agent": "weather",
+    "last_agent": "news",
     "mic_enabled": true,
     "window": {
         "width": 960.0,
-        "height": 1232.0,
+        "height": 1227.0,
         "x": 1208.0,
         "y": 67.0,
         "maximized": false

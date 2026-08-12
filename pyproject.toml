@@ -33,6 +33,10 @@ dependencies = [
     # needed for real mic capture specifically.
     "vosk>=0.3.45",
     "pyttsx3>=2.90",
+    # Real vision capture (Tier 3 — see src/services/vision_service.py).
+    # Optional at runtime with graceful fallback to the original
+    # simulated placeholder, same pattern as sounddevice/vosk above.
+    "opencv-python-headless>=4.9",
 ]
 
 [tool.ruff]

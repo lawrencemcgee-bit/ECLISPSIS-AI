@@ -1907,3 +1907,387 @@
 {"ts": "2026-08-11T05:58:50.632642Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "weather", "mic_enabled": false, "window": {"width": 960.0, "height": 1232.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
 {"ts": "2026-08-11T05:58:50.633523Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": false, "window": {"width": 960.0, "height": 1232.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
 {"ts": "2026-08-11T05:58:50.634324Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1232.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:27:08.541915Z", "level": "INFO", "event": "startup", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1232.0, "x": 1208.0, "y": 67.0, "maximized": false}}, "profile": {"name": "User", "avatar": "default.png", "preferences": {"show_typing_indicator": true, "enable_sound_effects": false}}, "session": {"panels": {"settings": false, "profile": false, "logs": false, "quick": false}, "draft": "", "last_agent": "onenote", "crashed": false}}}
+{"ts": "2026-08-12T03:27:09.492718Z", "level": "INFO", "event": "agents.registered", "payload": {"agents": ["onenote", "weather", "news", "coding", "social"]}}
+{"ts": "2026-08-12T03:27:09.492982Z", "level": "INFO", "event": "tools.registered", "payload": {"tools": ["echo"]}}
+{"ts": "2026-08-12T03:27:14.359771Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 153600, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:15.485663Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 36864, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:15.888542Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:15.940518Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "okay so ridiculously he was right"}}
+{"ts": "2026-08-12T03:27:15.941308Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: okay so ridiculously he was right"}}
+{"ts": "2026-08-12T03:27:15.947620Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 130}}
+{"ts": "2026-08-12T03:27:15.953304Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 131}}
+{"ts": "2026-08-12T03:27:19.945193Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 131072, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:20.646915Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "it is awful and to receive the okay"}}
+{"ts": "2026-08-12T03:27:20.647794Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: it is awful and to receive the okay"}}
+{"ts": "2026-08-12T03:27:20.654148Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 132}}
+{"ts": "2026-08-12T03:27:20.659752Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 133}}
+{"ts": "2026-08-12T03:27:24.773384Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 153600, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:25.674765Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 28672, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:25.717373Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "right well no jobs okay so who serves no don't need three"}}
+{"ts": "2026-08-12T03:27:25.718284Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: right well no jobs okay so who serves no don't need three"}}
+{"ts": "2026-08-12T03:27:25.725014Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 134}}
+{"ts": "2026-08-12T03:27:25.730670Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 135}}
+{"ts": "2026-08-12T03:27:31.317614Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 180224, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:31.873267Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "creating could even though that people are gonna work"}}
+{"ts": "2026-08-12T03:27:31.874218Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: creating could even though that people are gonna work"}}
+{"ts": "2026-08-12T03:27:31.880471Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 136}}
+{"ts": "2026-08-12T03:27:31.885863Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 137}}
+{"ts": "2026-08-12T03:27:37.211844Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 188416, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:37.968638Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "a flight to meet up with was possible for different sectors"}}
+{"ts": "2026-08-12T03:27:37.969587Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: a flight to meet up with was possible for different sectors"}}
+{"ts": "2026-08-12T03:27:37.976434Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 138}}
+{"ts": "2026-08-12T03:27:37.982233Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 139}}
+{"ts": "2026-08-12T03:27:43.697060Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 208896, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:44.738723Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 32768, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:45.218782Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:45.574537Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:45.915246Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:46.171900Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1330.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:27:46.272177Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:46.611495Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:46.829715Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1320.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:27:46.935700Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:46.986223Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "it has always can just go back to life you cope without without a if only know he life"}}
+{"ts": "2026-08-12T03:27:46.987076Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: it has always can just go back to life you cope without without a if only know he life"}}
+{"ts": "2026-08-12T03:27:46.993550Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 140}}
+{"ts": "2026-08-12T03:27:46.999339Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 141}}
+{"ts": "2026-08-12T03:27:47.480586Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1229.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:27:47.653128Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1227.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:27:48.128496Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:27:54.514320Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 243712, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:55.259529Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 22528, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:55.615147Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:27:55.715506Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "well it's raw story"}}
+{"ts": "2026-08-12T03:27:55.716343Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: well it's raw story"}}
+{"ts": "2026-08-12T03:27:55.722733Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 142}}
+{"ts": "2026-08-12T03:27:55.728979Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 143}}
+{"ts": "2026-08-12T03:28:06.199869Z", "level": "INFO", "event": "startup", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}, "profile": {"name": "User", "avatar": "default.png", "preferences": {"show_typing_indicator": true, "enable_sound_effects": false}}, "session": {"panels": {"settings": false, "profile": false, "logs": false, "quick": false}, "draft": "", "last_agent": "onenote", "crashed": false}}}
+{"ts": "2026-08-12T03:28:06.657115Z", "level": "INFO", "event": "agents.registered", "payload": {"agents": ["onenote", "weather", "news", "coding", "social"]}}
+{"ts": "2026-08-12T03:28:06.657477Z", "level": "INFO", "event": "tools.registered", "payload": {"tools": ["echo"]}}
+{"ts": "2026-08-12T03:28:07.143500Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:07.474318Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:28:07.538399Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:07.988565Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:08.313480Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:08.637232Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:08.946819Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:09.256838Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:09.581355Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:09.891808Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:10.216743Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:10.541529Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:10.852290Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:11.175707Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:11.562410Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:11.888718Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:12.214224Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:12.538068Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:12.911267Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:13.358346Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:13.699137Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:14.024595Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:14.347850Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:14.703205Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:15.027292Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:15.351116Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:15.673704Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:15.999821Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:16.340528Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:16.665306Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:16.674407Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "okay"}}
+{"ts": "2026-08-12T03:28:16.675263Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: okay"}}
+{"ts": "2026-08-12T03:28:16.682027Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 144}}
+{"ts": "2026-08-12T03:28:16.688009Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 145}}
+{"ts": "2026-08-12T03:28:18.739792Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 65536, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:19.221444Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:19.595135Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:20.014210Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:20.369350Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:20.712070Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:21.052284Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:21.454281Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:21.794143Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:28:21.811774Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "ah castille priscilla know"}}
+{"ts": "2026-08-12T03:28:21.812628Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: ah castille priscilla know"}}
+{"ts": "2026-08-12T03:28:21.820113Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 146}}
+{"ts": "2026-08-12T03:28:21.826765Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 147}}
+{"ts": "2026-08-12T03:29:06.233139Z", "level": "INFO", "event": "startup", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}, "profile": {"name": "User", "avatar": "default.png", "preferences": {"show_typing_indicator": true, "enable_sound_effects": false}}, "session": {"panels": {"settings": false, "profile": false, "logs": false, "quick": false}, "draft": "", "last_agent": "onenote", "crashed": false}}}
+{"ts": "2026-08-12T03:29:06.682170Z", "level": "INFO", "event": "agents.registered", "payload": {"agents": ["onenote", "weather", "news", "coding", "social"]}}
+{"ts": "2026-08-12T03:29:06.682440Z", "level": "INFO", "event": "tools.registered", "payload": {"tools": ["echo"]}}
+{"ts": "2026-08-12T03:33:46.955139Z", "level": "INFO", "event": "startup", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}, "profile": {"name": "User", "avatar": "default.png", "preferences": {"show_typing_indicator": true, "enable_sound_effects": false}}, "session": {"panels": {"settings": false, "profile": false, "logs": false, "quick": false}, "draft": "", "last_agent": "onenote", "crashed": false}}}
+{"ts": "2026-08-12T03:33:47.411354Z", "level": "INFO", "event": "agents.registered", "payload": {"agents": ["onenote", "weather", "news", "coding", "social"]}}
+{"ts": "2026-08-12T03:33:47.411635Z", "level": "INFO", "event": "tools.registered", "payload": {"tools": ["echo"]}}
+{"ts": "2026-08-12T03:33:48.860596Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 45056, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:49.194872Z", "level": "INFO", "event": "settings.saved", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}}}
+{"ts": "2026-08-12T03:33:49.358894Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:49.730833Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:50.071442Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:50.442458Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:50.781978Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:51.139032Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:51.463598Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:51.819594Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:52.206154Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:52.578019Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:52.935520Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:53.354171Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:53.678374Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:54.129043Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:54.499893Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:54.823216Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:55.163425Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:55.518963Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:55.859072Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:56.215341Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:56.553996Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:56.878795Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:57.203421Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:57.528230Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:57.853457Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:58.161474Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:33:58.168999Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "twenty six hundred contract saying this breathe out to be sore the next day right out forty nine percent off with a sixty day guarantee"}}
+{"ts": "2026-08-12T03:33:58.169839Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: twenty six hundred contract saying this breathe out to be sore the next day right out forty nine percent off with a sixty day guarantee"}}
+{"ts": "2026-08-12T03:33:58.176699Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 148}}
+{"ts": "2026-08-12T03:33:58.183068Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 149}}
+{"ts": "2026-08-12T03:34:06.502493Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 266240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:07.609296Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 36864, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:08.091356Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:08.417645Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:08.433591Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "ah coming to receive twenty six hundred contract saying the screen out to be sore the next day right now forty nine percent with sixty think heritage"}}
+{"ts": "2026-08-12T03:34:08.434375Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: ah coming to receive twenty six hundred contract saying the screen out to be sore the next day right now forty nine percent with sixty think heritage"}}
+{"ts": "2026-08-12T03:34:08.441086Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 150}}
+{"ts": "2026-08-12T03:34:08.447164Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 151}}
+{"ts": "2026-08-12T03:34:16.772080Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 268288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:17.286439Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:17.613217Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:17.924462Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:18.235853Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:18.546617Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:18.857879Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:19.200264Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:19.542086Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:19.884397Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:20.211238Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:20.522006Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:20.848774Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:21.160163Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:21.471130Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 8192, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:21.782256Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:22.124551Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:22.450728Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:22.792620Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:23.102532Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:23.132424Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "yeah"}}
+{"ts": "2026-08-12T03:34:23.133315Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: yeah"}}
+{"ts": "2026-08-12T03:34:23.140451Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 152}}
+{"ts": "2026-08-12T03:34:23.146825Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 153}}
+{"ts": "2026-08-12T03:34:25.191902Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 65536, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:25.579124Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:25.902153Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:26.242413Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:26.483838Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 154}}
+{"ts": "2026-08-12T03:34:26.484078Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "are you able to review code development"}}
+{"ts": "2026-08-12T03:34:26.484613Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: are you able to review code development"}}
+{"ts": "2026-08-12T03:34:26.491507Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 155}}
+{"ts": "2026-08-12T03:34:26.598683Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:26.655611Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "why"}}
+{"ts": "2026-08-12T03:34:26.656522Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: why"}}
+{"ts": "2026-08-12T03:34:26.663505Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 156}}
+{"ts": "2026-08-12T03:34:26.669881Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 157}}
+{"ts": "2026-08-12T03:34:28.654141Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 65536, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:29.026196Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:29.350863Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:29.675217Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:29.999417Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:30.324637Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:30.649040Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:30.974097Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:31.299427Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:31.624602Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:31.636738Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "shy"}}
+{"ts": "2026-08-12T03:34:31.637597Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: shy"}}
+{"ts": "2026-08-12T03:34:31.645193Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 158}}
+{"ts": "2026-08-12T03:34:31.651413Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 159}}
+{"ts": "2026-08-12T03:34:33.633634Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 63488, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:34.035948Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:34.421170Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:34.777820Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:35.102274Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:35.426303Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:35.750490Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:36.106433Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:36.446549Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:36.468037Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "that that"}}
+{"ts": "2026-08-12T03:34:36.468968Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: that that"}}
+{"ts": "2026-08-12T03:34:36.475699Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 160}}
+{"ts": "2026-08-12T03:34:36.482155Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 161}}
+{"ts": "2026-08-12T03:34:38.859520Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 77824, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:39.324288Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:39.375724Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "the hilton"}}
+{"ts": "2026-08-12T03:34:39.376659Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: the hilton"}}
+{"ts": "2026-08-12T03:34:39.383895Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 162}}
+{"ts": "2026-08-12T03:34:39.390316Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 163}}
+{"ts": "2026-08-12T03:34:41.843500Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 81920, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:42.055110Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "all of that"}}
+{"ts": "2026-08-12T03:34:42.055962Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: all of that"}}
+{"ts": "2026-08-12T03:34:42.063596Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 164}}
+{"ts": "2026-08-12T03:34:42.069963Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 165}}
+{"ts": "2026-08-12T03:34:44.585140Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 86016, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:44.776521Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "the hill"}}
+{"ts": "2026-08-12T03:34:44.777395Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: the hill"}}
+{"ts": "2026-08-12T03:34:44.784595Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 166}}
+{"ts": "2026-08-12T03:34:44.791311Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 167}}
+{"ts": "2026-08-12T03:34:47.104797Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 81920, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:47.506172Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:47.830882Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:48.155217Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:48.479918Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:48.805236Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:49.115479Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:49.136498Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 168}}
+{"ts": "2026-08-12T03:34:49.136777Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "who are you speaking with\\"}}
+{"ts": "2026-08-12T03:34:49.137404Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: who are you speaking with\\"}}
+{"ts": "2026-08-12T03:34:49.144236Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 169}}
+{"ts": "2026-08-12T03:34:49.438377Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:49.762664Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:49.778252Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "it"}}
+{"ts": "2026-08-12T03:34:49.779152Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: it"}}
+{"ts": "2026-08-12T03:34:49.786059Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 170}}
+{"ts": "2026-08-12T03:34:49.793275Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 171}}
+{"ts": "2026-08-12T03:34:51.709356Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 63488, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:51.947156Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "don't watch"}}
+{"ts": "2026-08-12T03:34:51.948016Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: don't watch"}}
+{"ts": "2026-08-12T03:34:51.955418Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 172}}
+{"ts": "2026-08-12T03:34:51.962051Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 173}}
+{"ts": "2026-08-12T03:34:54.484819Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 88064, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:54.997935Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:55.338218Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:55.405795Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "one of the"}}
+{"ts": "2026-08-12T03:34:55.406636Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: one of the"}}
+{"ts": "2026-08-12T03:34:55.414458Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 174}}
+{"ts": "2026-08-12T03:34:55.421365Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 175}}
+{"ts": "2026-08-12T03:34:57.874756Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 79872, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:58.354020Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:58.772111Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:34:58.826414Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "it is like they don't give a shit"}}
+{"ts": "2026-08-12T03:34:58.827290Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: it is like they don't give a shit"}}
+{"ts": "2026-08-12T03:34:58.835494Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 176}}
+{"ts": "2026-08-12T03:34:58.842084Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 177}}
+{"ts": "2026-08-12T03:35:02.820784Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 129024, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:02.997340Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "notes"}}
+{"ts": "2026-08-12T03:35:02.998279Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: notes"}}
+{"ts": "2026-08-12T03:35:03.005616Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 178}}
+{"ts": "2026-08-12T03:35:03.012722Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 179}}
+{"ts": "2026-08-12T03:35:05.128480Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 75776, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:05.654443Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:05.994775Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:06.334867Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:06.673722Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:07.000657Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:07.013309Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "he would want"}}
+{"ts": "2026-08-12T03:35:07.014151Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: he would want"}}
+{"ts": "2026-08-12T03:35:07.022304Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 180}}
+{"ts": "2026-08-12T03:35:07.029583Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 181}}
+{"ts": "2026-08-12T03:35:09.677851Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 86016, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:10.221083Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 16384, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:10.546734Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:10.888195Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:11.228240Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:11.568815Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:11.894380Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:11.934848Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "the have"}}
+{"ts": "2026-08-12T03:35:11.935728Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: the have"}}
+{"ts": "2026-08-12T03:35:11.943983Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 182}}
+{"ts": "2026-08-12T03:35:11.951104Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 183}}
+{"ts": "2026-08-12T03:35:13.602955Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 184}}
+{"ts": "2026-08-12T03:35:13.603201Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "what can you hear"}}
+{"ts": "2026-08-12T03:35:13.603980Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: what can you hear"}}
+{"ts": "2026-08-12T03:35:13.611550Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 185}}
+{"ts": "2026-08-12T03:35:14.265140Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 75776, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:14.636148Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:15.007746Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:15.363731Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:15.690126Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:16.016617Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:16.343456Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:16.668058Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:17.008965Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:17.348977Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:17.690407Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:18.077245Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:18.416732Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:18.786750Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:19.112655Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:19.470476Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:19.794960Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:20.181702Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:20.538049Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:20.576724Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "it may applying hours one find a job for stuff to replacements"}}
+{"ts": "2026-08-12T03:35:20.577652Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: it may applying hours one find a job for stuff to replacements"}}
+{"ts": "2026-08-12T03:35:20.585903Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 186}}
+{"ts": "2026-08-12T03:35:20.593411Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 187}}
+{"ts": "2026-08-12T03:35:26.500974Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 190464, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:27.246722Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 24576, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:27.647854Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:27.972310Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:28.327908Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:28.652090Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:28.993400Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:29.044807Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "to not checking have a sarcastic doing business agreed to touch anything it"}}
+{"ts": "2026-08-12T03:35:29.045722Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: to not checking have a sarcastic doing business agreed to touch anything it"}}
+{"ts": "2026-08-12T03:35:29.053987Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 188}}
+{"ts": "2026-08-12T03:35:29.061778Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 189}}
+{"ts": "2026-08-12T03:35:35.748295Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 190}}
+{"ts": "2026-08-12T03:35:35.748627Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "what engine are you using"}}
+{"ts": "2026-08-12T03:35:35.749361Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: what engine are you using"}}
+{"ts": "2026-08-12T03:35:35.757100Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 191}}
+{"ts": "2026-08-12T03:35:35.846849Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 219136, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:36.638767Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 26624, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:37.025991Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:37.351238Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:37.707675Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:38.034944Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:38.081570Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "that makes that for ignoring the technology on the surface you need to be as to be of"}}
+{"ts": "2026-08-12T03:35:38.082334Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: that makes that for ignoring the technology on the surface you need to be as to be of"}}
+{"ts": "2026-08-12T03:35:38.090480Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 192}}
+{"ts": "2026-08-12T03:35:38.097814Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 193}}
+{"ts": "2026-08-12T03:35:45.544978Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 239616, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:46.352203Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 26624, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:46.740778Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:47.113602Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:47.453393Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:47.811087Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:48.260938Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:48.679021Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:49.099095Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 14336, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:49.455024Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:49.812253Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:50.198779Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:50.539133Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:35:50.604766Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "bad know what that games they won't say behind it is to avoid off by there is not worth it the next just bullshit preserve the a clear with you yes technology that actually worse"}}
+{"ts": "2026-08-12T03:35:50.605748Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: bad know what that games they won't say behind it is to avoid off by there is not worth it the next just bullshit preserve the a clear with you yes technology that actually worse"}}
+{"ts": "2026-08-12T03:35:50.613629Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 194}}
+{"ts": "2026-08-12T03:35:50.621152Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 195}}
+{"ts": "2026-08-12T03:35:58.936232Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 268288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:36:00.164073Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 38912, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:36:00.536825Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 12288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:36:00.558420Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "just use his medical grade belt those glasses job has said no replacement said in twenty minutes just six hundred deep contract same as three thousand know"}}
+{"ts": "2026-08-12T03:36:00.559329Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: just use his medical grade belt those glasses job has said no replacement said in twenty minutes just six hundred deep contract same as three thousand know"}}
+{"ts": "2026-08-12T03:36:00.568142Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 196}}
+{"ts": "2026-08-12T03:36:00.576068Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 197}}
+{"ts": "2026-08-12T03:36:08.899758Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 268288, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T03:36:09.341543Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "will be sore the next day and right now it's forty nine percent off is a sixty dangerous no one her"}}
+{"ts": "2026-08-12T03:36:09.342438Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: will be sore the next day and right now it's forty nine percent off is a sixty dangerous no one her"}}
+{"ts": "2026-08-12T03:36:09.350577Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 198}}
+{"ts": "2026-08-12T03:36:09.358357Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 199}}
+{"ts": "2026-08-12T04:05:37.092591Z", "level": "INFO", "event": "startup", "payload": {"settings": {"theme": "dark", "last_agent": "news", "mic_enabled": true, "window": {"width": 960.0, "height": 1228.0, "x": 1208.0, "y": 67.0, "maximized": false}}, "profile": {"name": "User", "avatar": "default.png", "preferences": {"show_typing_indicator": true, "enable_sound_effects": false}}, "session": {"panels": {"settings": false, "profile": false, "logs": false, "quick": false}, "draft": "", "last_agent": "onenote", "crashed": false}}}
+{"ts": "2026-08-12T04:05:37.586007Z", "level": "INFO", "event": "agents.registered", "payload": {"agents": ["onenote", "weather", "news", "coding", "social"]}}
+{"ts": "2026-08-12T04:05:37.586298Z", "level": "INFO", "event": "tools.registered", "payload": {"tools": ["echo"]}}
+{"ts": "2026-08-12T04:05:41.802201Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 133120, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T04:05:42.535431Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 24576, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T04:05:42.891129Z", "level": "INFO", "event": "voice.audio_polled", "payload": {"bytes_captured": 10240, "real_capture_available": true, "stt_available": true}}
+{"ts": "2026-08-12T04:05:42.921058Z", "level": "INFO", "event": "conversation.input", "payload": {"message": "john river"}}
+{"ts": "2026-08-12T04:05:42.922373Z", "level": "INFO", "event": "conversation.output", "payload": {"content": "LocalEngine received: john river"}}
+{"ts": "2026-08-12T04:05:42.931555Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 200}}
+{"ts": "2026-08-12T04:05:42.939450Z", "level": "INFO", "event": "chat.saved", "payload": {"count": 201}}

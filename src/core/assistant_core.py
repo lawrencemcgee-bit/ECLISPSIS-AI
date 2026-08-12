@@ -115,16 +115,25 @@ class AssistantCore:
         from src.services.onenote_service import OneNoteService
         from src.services.weather_service import WeatherService
         from src.services.news_service import NewsService
+        from src.services.coding_service import CodingService
+        from src.services.social_content_service import SocialContentService
+        from src.services.creative_content_service import CreativeContentService
 
         from src.agents.onenote_agent import OneNoteAgent
         from src.agents.weather_agent import WeatherAgent
         from src.agents.news_agent import NewsAgent
+        from src.agents.coding_agent import CodingAgent
+        from src.agents.social_agent import SocialAgent
+        from src.agents.creative_agent import CreativeAgent
 
         self.agents.registry.register("onenote", OneNoteAgent(OneNoteService()))
         self.agents.registry.register("weather", WeatherAgent(WeatherService()))
         self.agents.registry.register("news", NewsAgent(NewsService()))
+        self.agents.registry.register("coding", CodingAgent(CodingService()))
+        self.agents.registry.register("social", SocialAgent(SocialContentService()))
+        self.agents.registry.register("creative", CreativeAgent(CreativeContentService()))
 
-        self.logger.info("agents.registered", {"agents": ["onenote", "weather", "news"]})
+        self.logger.info("agents.registered", {"agents": ["onenote", "weather", "news", "coding", "social", "creative"]})
 
     # ---------------------------------------------------------
     # Plugin manager
@@ -418,10 +427,13 @@ class AssistantCore:
         owns those subsystems and knows what "healthy" means for each —
         ObservabilityService just assembles what it's given.
 
-        Vision/Voice/Audio are marked "simulated": true because they're
-        still placeholder-level (Phase 6/7 note in their own modules) — a
-        diagnostics panel should say so honestly rather than reporting
-        green health for a camera/mic that was never actually opened.
+        Vision/Voice/Audio are marked "simulated" based on whether real
+        capture is actually available in THIS environment/process (camera
+        opened successfully, mic/STT backend present, etc.) — not
+        hardcoded, so a diagnostics panel says so honestly either way
+        rather than always reporting green health for hardware that was
+        never actually opened. Vision joined Voice/Audio on this pattern
+        in Tier 3 (previously hardcoded True; see vision_service.py).
         """
         subsystems = {
             "engine": {
@@ -437,7 +449,8 @@ class AssistantCore:
             },
             "vision": {
                 "healthy": True,
-                "simulated": True,
+                "camera_available": self.vision.camera_available,
+                "simulated": not self.vision.camera_available,
             },
             "audio": {
                 "healthy": True,
