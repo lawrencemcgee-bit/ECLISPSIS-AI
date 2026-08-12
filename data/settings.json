@@ -1,6 +1,6 @@
 {
     "theme": "dark",
-    "last_agent": "weather",
+    "last_agent": "news",
     "mic_enabled": true,
     "window": {
         "width": 960.0,

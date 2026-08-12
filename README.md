@@ -150,6 +150,7 @@ python -m unittest test_all_phases.Phase9Observability -v
 | Automation (event & schedule triggers) | Real — persists, ticked by a background thread; supports multi-step `sequence` actions (steps of any action type, including nested sequences) |
 | Cross-platform HTTP API | Real for the above; API-key auth on every route (`X-API-Key`, see `src/api/api_key_service.py`); explicit `501`s for capabilities that don't exist yet (see below) |
 | Flet UI (Nova) | Real — chat, agent tray, mic/camera, reactive orb; window-restore-across-restart not yet confirmed |
+| Flet packaging (`flet build`) | Configured (`nova_main.py`, `lyra_main.py`) and validated up to Flutter SDK acquisition — see `docs/flet_packaging.md` for exact commands and what's still needed on your machine to finish it |
 | QML UI | Deprecated — kept as a fallback, no further work planned |
 | Voice (STT/TTS/mic capture) | **Real, confirmed working end-to-end live in Nova** (`vosk`/`pyttsx3`/`sounddevice` + a Vosk model) — falls back to simulated/no-op if not installed |
 | Vision | **Real camera capture** (OpenCV) with graceful fallback to simulated if unavailable — local pixel-level analysis (brightness, sharpness, dominant channel), not ML object/scene recognition |
@@ -223,9 +224,14 @@ test_all_phases.py — The regression suite
 Flet UI migration (Nova and Lyra both built and at feature parity),
 real voice I/O (confirmed working end-to-end), real NCI scoring, a real
 vision pipeline, real Coding/Social/Creative agents, API-key auth on
-the HTTP API, and multi-step (`sequence`) automation actions — all
-shipped in Tier 3. Still unbuilt: a browser agent (deliberately
-deferred), HTTP endpoints for automation management, and a few
-batch/persistence-backed endpoints (`/nci/batch`, `/nci/latest`,
-`/vision/latest`). See `docs/architecture_baseline.md` §11–12 for the
-full known-limitations list.
+the HTTP API, multi-step (`sequence`) automation actions, and Flet
+packaging configuration (`nova_main.py`/`lyra_main.py` +
+`docs/flet_packaging.md` — build commands verified to parse/initialize
+correctly; the actual native compile needs to run on a machine that can
+reach the Flutter SDK) — all shipped in Tier 3. Still unbuilt/unrun: a
+browser agent (deliberately deferred), HTTP endpoints for automation
+management, a few batch/persistence-backed endpoints (`/nci/batch`,
+`/nci/latest`, `/vision/latest`), and actually executing the Flet build
+commands on a machine with full internet access. See
+`docs/architecture_baseline.md` §11–12 for the full known-limitations
+list.

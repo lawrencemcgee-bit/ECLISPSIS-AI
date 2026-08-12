@@ -11,6 +11,9 @@ uvicorn
 
 # Flet UI (proposed migration from PySide6/QML — see docs/flet_migration_assessment.md)
 flet
+# flet-cli provides `flet build`/`flet doctor` for packaging — see
+# docs/flet_packaging.md. Not needed to just run the app.
+flet-cli
 
 # Qt / UI
 PySide6==6.10.2

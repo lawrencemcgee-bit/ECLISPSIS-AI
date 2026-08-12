@@ -5,7 +5,7 @@ Also demonstrates agent usage (OneNote, Weather, News).
 """
 
 from src.core.assistant_core import AssistantCore
-from src.ui_flet import flet
+from src.ui.qml_app import run_qml_ui
 
 def demo_agents(assistant: AssistantCore):
     print("\n=== Agent Demo ===")
@@ -38,6 +38,6 @@ if __name__ == "__main__":
     # (Phase 2: previously qml_app.py constructed its own AssistantCore(),
     # meaning the CLI demo above and the UI ran against two unrelated
     # instances with separate settings/session/logging state.)
-    print("Launching FLET UI...")
-    run_flet_ui(assistant)
+    print("Launching QML UI...")
+    run_qml_ui(assistant)
 

@@ -28,6 +28,10 @@ dependencies = [
     # docs/flet_migration_assessment.md). pyside6 above is left in place;
     # this is additive until a cutover decision is made.
     "flet==0.86.1",
+    # flet-cli provides the `flet build`/`flet doctor` commands used for
+    # packaging — see docs/flet_packaging.md. Not needed to just run the
+    # app (flet_run.py), only to package it.
+    "flet-cli==0.86.1",
     # Real voice I/O (see docs/voice_io_assessment.md). Both optional at
     # runtime with graceful fallback — sounddevice/numpy above are also
     # needed for real mic capture specifically.

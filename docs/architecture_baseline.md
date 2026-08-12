@@ -228,6 +228,16 @@ afterward (72 passed / 7 skipped, same skip count as before).
   `/automations/*`) — pre-existing gap, not introduced by the
   `sequence` action type, but worth flagging since automation is
   otherwise now fully HTTP-API-authenticated territory (§7).
+- Flet packaging (`flet build`) is configured but not actually
+  compiled anywhere in this repo's history — see `docs/flet_packaging.md`.
+  Two dedicated entry points (`nova_main.py`, `lyra_main.py`) exist and
+  the exact `flet build` commands were verified to parse/initialize
+  correctly, but the real compile needs a Flutter SDK download this
+  project's dev/CI sandbox couldn't reach (network-egress restriction
+  specific to that environment, not a config problem — see the doc for
+  what was actually verified vs. what a normal machine still needs to
+  run). No built artifact ships in this repo; running the documented
+  commands on a machine with normal internet access is still required.
 
 ## 12. Next Steps
 The original 14-phase roadmap (Milestones 0–13) is complete, the Tier 2
@@ -237,8 +247,14 @@ real Coding/Social/Creative agents (`coding_service.py`,
 `ast`/`difflib`-based, no execution; `social_content_service.py`, local
 post analysis, no posting; `creative_content_service.py`,
 template/procedural generation + heuristic critique, no LLM), API-key
-auth on the HTTP API (`api_key_service.py`), and multi-step (`sequence`)
-automation actions. What remains: a browser agent, HTTP endpoints for
-automation management, and the batch/persistence-backed NCI and vision
-endpoints (`/nci/batch`, `/nci/latest`, `/vision/latest`). These don't
-have phase numbers yet — worth a fresh planning pass to sequence them.
+auth on the HTTP API (`api_key_service.py`), multi-step (`sequence`)
+automation actions, and Flet packaging configuration (`nova_main.py`,
+`lyra_main.py`, `docs/flet_packaging.md` — commands verified to parse
+and initialize correctly; the actual compile still needs to run on a
+machine that can reach the Flutter SDK, since this project's sandbox
+couldn't). What remains: a browser agent, HTTP endpoints for automation
+management, the batch/persistence-backed NCI and vision endpoints
+(`/nci/batch`, `/nci/latest`, `/vision/latest`), and actually running
+the Flet build commands on a real machine to confirm they produce a
+working artifact end-to-end. These don't have phase numbers yet — worth
+a fresh planning pass to sequence them.
