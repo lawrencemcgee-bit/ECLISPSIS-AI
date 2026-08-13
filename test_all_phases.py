@@ -267,6 +267,77 @@ class Phase3AgentArchitecture(unittest.TestCase):
             self.assertTrue(len(result.output["suggestions"]) > 0)
 
 
+class Phase3bBrowserAgent(unittest.TestCase):
+    """Tier 3: the browser agent deliberately deferred when Coding/Social/
+    Creative were built (see architecture_baseline.md §11) — a
+    general-purpose "fetch a URL and read it" capability, built on the
+    shared WebFetcher (src/services/web_fetch.py) NCIService's URL
+    scoring also uses."""
+
+    def _fake_browser_agent(self, assistant, fetcher):
+        """Swaps the real WebFetcher for a fake one on the already-
+        registered browser agent's service, mirroring how the voice
+        tests swap in _FakeRecognizer — avoids a real network call while
+        still exercising BrowserService/BrowserAgent's own logic."""
+        assistant.agents.registry.get("browser").service._fetcher = fetcher
+
+    def test_browser_agent_fetches_and_reads_url(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            self._fake_browser_agent(assistant, _FakeWebFetcher(result={
+                "domain": "example.com", "status_code": 200,
+                "title": "Example Article", "author": "Jane Doe",
+                "text": "This is the main body text of the article.",
+                "links": ["https://example.com/a", "https://example.com/b"],
+            }))
+            result = assistant.agents.run("browser", url="https://example.com/article")
+            self.assertIsNone(result.metadata)
+            self.assertEqual(result.output["title"], "Example Article")
+            self.assertEqual(result.output["author"], "Jane Doe")
+            self.assertEqual(result.output["word_count"], 9)
+            self.assertEqual(result.output["links"], ["https://example.com/a", "https://example.com/b"])
+            self.assertFalse(result.output["text_truncated"])
+            self.assertFalse(result.output["links_truncated"])
+
+    def test_browser_agent_caps_oversized_text_and_links(self):
+        from src.core.assistant_core import AssistantCore
+        from src.services.browser_service import BrowserService
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            long_text = "word " * 10000  # well over MAX_TEXT_CHARS
+            many_links = [f"https://example.com/{i}" for i in range(BrowserService.MAX_LINKS + 10)]
+            self._fake_browser_agent(assistant, _FakeWebFetcher(result={
+                "domain": "example.com", "status_code": 200,
+                "text": long_text, "links": many_links,
+            }))
+            result = assistant.agents.run("browser", url="https://example.com/big")
+            self.assertTrue(result.output["text_truncated"])
+            self.assertLessEqual(len(result.output["text"]), BrowserService.MAX_TEXT_CHARS)
+            self.assertTrue(result.output["links_truncated"])
+            self.assertEqual(len(result.output["links"]), BrowserService.MAX_LINKS)
+
+    def test_browser_agent_reports_fetch_failure_as_error_not_raise(self):
+        """Mirrors NCI's analyze() contract: a fetch failure is reported
+        back, never raised past the agent boundary."""
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant.agents.run(
+                "browser", url="http://this-domain-does-not-exist.invalid/page",
+            )
+            self.assertIsNone(result.output)
+            self.assertIn("error", result.metadata)
+
+    def test_browser_agent_missing_url_reports_error(self):
+        from src.core.assistant_core import AssistantCore
+        with _isolated_cwd():
+            assistant = AssistantCore()
+            result = assistant.agents.run("browser")
+            self.assertIsNone(result.output)
+            self.assertIn("error", result.metadata)
+
+
 # ---------------------------------------------------------------------------
 # Phase 4 — Assistant Core & Orchestration
 # ---------------------------------------------------------------------------
@@ -1051,6 +1122,106 @@ class Phase11CrossPlatformAPI(unittest.TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("suggestions", resp.json()["result"])
 
+    def test_browser_fetch_endpoint(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            assistant.agents.registry.get("browser").service._fetcher = _FakeWebFetcher(result={
+                "domain": "example.com", "status_code": 200,
+                "title": "Example Article",
+                "text": "Some article body text right here.",
+                "links": ["https://example.com/a"],
+            })
+            resp = client.post("/browser/fetch", json={"url": "https://example.com/article"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["result"]["title"], "Example Article")
+
+    def test_browser_fetch_endpoint_422_on_failure(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/browser/fetch", json={
+                "url": "http://this-domain-does-not-exist.invalid/page",
+            })
+            self.assertEqual(resp.status_code, 422)
+
+    def test_automation_schedule_trigger_register_list_tick(self):
+        """Tier 3: automation management moves from in-process-only to a
+        real HTTP surface. Registers a schedule trigger over HTTP, confirms
+        it shows up in /automation/triggers, and confirms /automation/tick
+        fires it — the same lifecycle test_schedule_trigger_fires_when_due
+        exercises directly against AssistantCore, but through the API."""
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/automation/triggers/schedule", json={
+                "interval_seconds": 60,
+                "action": {"type": "notify", "text": "scheduled check-in"},
+                "run_immediately": True,
+            })
+            self.assertEqual(resp.status_code, 200)
+            trigger_id = resp.json()["trigger_id"]
+
+            listed = client.get("/automation/triggers").json()["triggers"]
+            self.assertTrue(any(t["id"] == trigger_id for t in listed))
+
+            fired = client.post("/automation/tick").json()["fired"]
+            self.assertIn(trigger_id, fired)
+
+    def test_automation_event_trigger_register_and_fire(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            resp = client.post("/automation/triggers/event", json={
+                "event_name": "state.changed",
+                "action": {"type": "notify", "text": "state changed"},
+            })
+            self.assertEqual(resp.status_code, 200)
+            trigger_id = resp.json()["trigger_id"]
+
+            notifications = []
+            assistant.events.on("automation.notification", lambda p: notifications.append(p))
+            assistant.process_message("hello")  # triggers a state.changed cycle
+            self.assertTrue(any(n["text"] == "state changed" for n in notifications))
+
+            listed = client.get("/automation/triggers").json()["triggers"]
+            self.assertTrue(any(t["id"] == trigger_id and t["kind"] == "event" for t in listed))
+
+    def test_automation_trigger_disable_enable_roundtrip(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            trigger_id = client.post("/automation/triggers/schedule", json={
+                "interval_seconds": 3600,
+                "action": {"type": "notify", "text": "later"},
+            }).json()["trigger_id"]
+
+            disable_resp = client.post(f"/automation/triggers/{trigger_id}/disable")
+            self.assertEqual(disable_resp.status_code, 200)
+            self.assertFalse(disable_resp.json()["enabled"])
+            listed = client.get("/automation/triggers").json()["triggers"]
+            self.assertFalse(next(t for t in listed if t["id"] == trigger_id)["enabled"])
+
+            enable_resp = client.post(f"/automation/triggers/{trigger_id}/enable")
+            self.assertTrue(enable_resp.json()["enabled"])
+            listed = client.get("/automation/triggers").json()["triggers"]
+            self.assertTrue(next(t for t in listed if t["id"] == trigger_id)["enabled"])
+
+    def test_automation_trigger_delete(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            trigger_id = client.post("/automation/triggers/schedule", json={
+                "interval_seconds": 3600,
+                "action": {"type": "notify", "text": "gone soon"},
+            }).json()["trigger_id"]
+
+            del_resp = client.delete(f"/automation/triggers/{trigger_id}")
+            self.assertEqual(del_resp.status_code, 200)
+            listed = client.get("/automation/triggers").json()["triggers"]
+            self.assertFalse(any(t["id"] == trigger_id for t in listed))
+
+    def test_automation_unknown_trigger_id_404s(self):
+        with _isolated_cwd():
+            client, assistant = self._client()
+            self.assertEqual(client.delete("/automation/triggers/does-not-exist").status_code, 404)
+            self.assertEqual(client.post("/automation/triggers/does-not-exist/enable").status_code, 404)
+            self.assertEqual(client.post("/automation/triggers/does-not-exist/disable").status_code, 404)
+
 
 @unittest.skipUnless(_FASTAPI_AVAILABLE, "fastapi/httpx not installed in this environment")
 class Phase11bApiKeyAuthentication(unittest.TestCase):
@@ -1726,6 +1897,20 @@ class _FakeRecognizer:
 
     def Result(self):
         return json.dumps({"text": self._text})
+
+
+class _FakeWebFetcher:
+    """Stands in for WebFetcher.fetch() so BrowserService/NCIService tests
+    can exercise the success path without a real network call — same
+    role _FakeRecognizer plays for VoiceService above."""
+    def __init__(self, result: dict = None, exc: Exception = None):
+        self._result = result
+        self._exc = exc
+
+    def fetch(self, url):
+        if self._exc is not None:
+            raise self._exc
+        return self._result
 
 
 # ---------------------------------------------------------------------------

@@ -18,18 +18,18 @@ Input is either raw text or a URL:
     text. A real video/vision pipeline is a separate, not-yet-built piece
     (see architecture_baseline.md); once it exists, feeding its transcript
     output into `content` here is all that's needed for video support.
-  - A URL is fetched and the main article text extracted. If both content
-    and url are supplied, content is used as-is (no fetch) and url is kept
-    only for source metadata (domain) — avoids a redundant network call
-    when the caller already has the text in hand.
+  - A URL is fetched (via the shared WebFetcher, see web_fetch.py) and the
+    main article text extracted. If both content and url are supplied,
+    content is used as-is (no fetch) and url is kept only for source
+    metadata (domain) — avoids a redundant network call when the caller
+    already has the text in hand.
 """
 
 import re
 from collections import Counter
 from urllib.parse import urlparse
 
-import requests
-from bs4 import BeautifulSoup
+from src.services.web_fetch import WebFetcher, WebFetchError
 
 
 _STOPWORDS = {
@@ -44,14 +44,18 @@ _STOPWORDS = {
 
 
 class NCIFetchError(Exception):
-    """Raised when a URL is supplied but couldn't be fetched or parsed."""
+    """Raised when a URL is supplied but couldn't be fetched or parsed.
+    Kept as NCI's own exception type (rather than callers catching
+    WebFetchError directly) so NCI's public contract — what
+    AssistantCore.analyze() catches — doesn't change if the shared
+    fetcher's error type ever does."""
 
 
 class NCIService:
     """Local, heuristic content scorer. See module docstring for design."""
 
-    USER_AGENT = "ECLIPSIS-AI-NCI/1.0 (+local research content scoring)"
-    REQUEST_TIMEOUT = 10
+    def __init__(self, fetcher: WebFetcher = None):
+        self._fetcher = fetcher or WebFetcher()
 
     def interpret(self, content: str = None, url: str = None, topic: str = None) -> dict:
         if not content and not url:
@@ -112,41 +116,12 @@ class NCIService:
     # -----------------------------------------------------------------
     def _fetch_url(self, url: str):
         try:
-            resp = requests.get(
-                url, timeout=self.REQUEST_TIMEOUT,
-                headers={"User-Agent": self.USER_AGENT},
-            )
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            raise NCIFetchError(f"Could not fetch {url}: {exc}") from exc
+            fetched = self._fetcher.fetch(url)
+        except WebFetchError as exc:
+            raise NCIFetchError(str(exc)) from exc
 
-        soup = BeautifulSoup(resp.text, "lxml")
-
-        meta = {}
-        title_tag = soup.find("title")
-        if title_tag and title_tag.get_text(strip=True):
-            meta["title"] = title_tag.get_text(strip=True)
-
-        author_tag = soup.find("meta", attrs={"name": "author"})
-        if author_tag and author_tag.get("content"):
-            meta["author"] = author_tag["content"]
-
-        published_tag = (
-            soup.find("meta", attrs={"property": "article:published_time"})
-            or soup.find("meta", attrs={"name": "date"})
-        )
-        if published_tag and published_tag.get("content"):
-            meta["published"] = published_tag["content"]
-
-        for tag in soup(["script", "style", "nav", "header", "footer", "aside", "form"]):
-            tag.decompose()
-
-        paragraphs = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
-        text = "\n".join(p for p in paragraphs if len(p.split()) > 3)
-        if not text:
-            text = soup.get_text(" ", strip=True)
-
-        return text, meta
+        meta = {k: fetched[k] for k in ("title", "author", "published") if k in fetched}
+        return fetched["text"], meta
 
     # -----------------------------------------------------------------
     # Tokenizing

@@ -10,24 +10,47 @@ Endpoints implemented here cover only capabilities that actually exist
 elsewhere in the codebase (process_message, analyze, capture_vision,
 plugins, diagnostics, permissions). /nci/score, /nci/batch, /nci/latest,
 /vision/analyze, /vision/latest, /social/analyze, /coding/analyze,
-/coding/diff, and /creative/* are backed by real local logic
-(src/services/nci_service.py, social_content_service.py,
-coding_service.py, creative_content_service.py, plus persisted history
-in AssistantCore/PersistenceService for the batch/latest endpoints) as
-of Tier 3 — none of them call an external API or execute the
-content/code they're given (see each service's module docstring).
-/creative/* in particular is template/heuristic-based, not an LLM — see
-creative_content_service.py's module docstring for what that means for
-the honesty of its output. No endpoint here is a 501 stub anymore; the
-pattern is kept below (_not_implemented) for any future endpoint that
-genuinely has no backing implementation yet, so a client gets a clear,
-typed answer instead of either a faked result or a generic 404.
+/coding/diff, /creative/*, and /browser/fetch are backed by real local
+logic (src/services/nci_service.py, social_content_service.py,
+coding_service.py, creative_content_service.py, browser_service.py,
+plus persisted history in AssistantCore/PersistenceService for the
+batch/latest endpoints) as of Tier 3 — none of them call an external
+API or execute the content/code they're given (see each service's
+module docstring). /creative/* in particular is template/heuristic-
+based, not an LLM — see creative_content_service.py's module docstring
+for what that means for the honesty of its output. /browser/fetch
+fetches exactly the one URL given and never follows a link on its own
+— see browser_service.py's module docstring for the full scope. No
+endpoint here is a 501 stub anymore; the pattern is kept below
+(_not_implemented) for any future endpoint that genuinely has no
+backing implementation yet, so a client gets a clear, typed answer
+instead of either a faked result or a generic 404.
 
 Permission endpoints (/permissions, /permissions/grant|deny|revoke)
 weren't in the original endpoint list, but a remote client has no other
 way to satisfy Phase 10's fail-closed default for camera/mic access —
 without them, /vision/analyze would 403 forever with no way to resolve it
 from outside the process.
+
+Automation management endpoints (/automation/triggers and friends,
+added in Tier 3) close the last pre-existing gap: AutomationService
+(Phase 12) and AssistantCore's register_event_automation /
+register_schedule_automation / unregister_automation /
+set_automation_enabled / list_automations / automation_tick were only
+ever callable from in-process Python — a remote client had no way to
+define, inspect, pause, or remove a trigger. These routes are a thin
+passthrough to those existing methods; no new automation logic lives
+here. Two things a Python caller can do that an HTTP caller cannot,
+by design, not oversight: (1) an event trigger's `predicate` is an
+arbitrary Python callable and isn't JSON-serializable, so the HTTP
+registration route has no predicate field at all — a caller who needs
+payload filtering registers the trigger un-filtered and filters
+downstream, or uses the in-process API directly; (2) action dicts are
+passed through unvalidated at registration time, same as the
+in-process API — malformed actions still only surface as a failure
+when the trigger actually fires (see AssistantCore._execute_automation_
+action), not at registration, so registering a trigger always succeeds
+if the request shape itself is valid.
 
 Tier 3: every route requires an API key (see src/api/api_key_service.py)
 via a global FastAPI dependency, fixing Milestone 11's known limitation
@@ -106,12 +129,33 @@ class CreativeCritiqueRequest(BaseModel):
     text: str
 
 
+class BrowserFetchRequest(BaseModel):
+    url: str
+
+
 class PluginExecuteRequest(BaseModel):
     payload: dict = {}
 
 
 class PermissionAction(BaseModel):
     permission: str
+
+
+class RegisterEventTriggerRequest(BaseModel):
+    event_name: str
+    action: dict
+    trigger_id: str | None = None
+    persistent: bool = False
+    # No `predicate` field: predicates are Python callables, not
+    # JSON-serializable — see this module's docstring.
+
+
+class RegisterScheduleTriggerRequest(BaseModel):
+    interval_seconds: float
+    action: dict
+    trigger_id: str | None = None
+    run_immediately: bool = False
+    persistent: bool = True
 
 
 class CreateKeyRequest(BaseModel):
@@ -268,6 +312,13 @@ def create_app(assistant: AssistantCore, api_keys: ApiKeyService = None) -> Fast
         result = assistant.agents.run("creative", action="critique", text=body.text)
         return {"result": result.output}
 
+    @app.post("/browser/fetch")
+    def post_browser_fetch(body: BrowserFetchRequest):
+        result = assistant.agents.run("browser", url=body.url)
+        if result.metadata and result.metadata.get("error"):
+            raise HTTPException(status_code=422, detail={"error": result.metadata["error"]})
+        return {"result": result.output}
+
     @app.post("/plugins/{plugin_id}")
     def post_plugin_execute(plugin_id: str, body: PluginExecuteRequest):
         return assistant.execute_plugins(plugin_id, body.payload)
@@ -298,6 +349,55 @@ def create_app(assistant: AssistantCore, api_keys: ApiKeyService = None) -> Fast
     def post_permission_revoke(body: PermissionAction):
         assistant.revoke_permission(body.permission)
         return assistant.list_permissions()
+
+    @app.get("/automation/triggers")
+    def get_automation_triggers():
+        return {"triggers": assistant.list_automations()}
+
+    @app.post("/automation/triggers/event")
+    def post_automation_trigger_event(body: RegisterEventTriggerRequest):
+        trigger_id = assistant.register_event_automation(
+            body.event_name, body.action,
+            trigger_id=body.trigger_id, persistent=body.persistent,
+        )
+        return {"trigger_id": trigger_id}
+
+    @app.post("/automation/triggers/schedule")
+    def post_automation_trigger_schedule(body: RegisterScheduleTriggerRequest):
+        trigger_id = assistant.register_schedule_automation(
+            body.interval_seconds, body.action, trigger_id=body.trigger_id,
+            run_immediately=body.run_immediately, persistent=body.persistent,
+        )
+        return {"trigger_id": trigger_id}
+
+    @app.delete("/automation/triggers/{trigger_id}")
+    def delete_automation_trigger(trigger_id: str):
+        if trigger_id not in assistant.automation.triggers:
+            raise HTTPException(status_code=404, detail={"error": "trigger_not_found"})
+        assistant.unregister_automation(trigger_id)
+        return {"unregistered": trigger_id}
+
+    @app.post("/automation/triggers/{trigger_id}/enable")
+    def post_automation_trigger_enable(trigger_id: str):
+        if trigger_id not in assistant.automation.triggers:
+            raise HTTPException(status_code=404, detail={"error": "trigger_not_found"})
+        assistant.set_automation_enabled(trigger_id, True)
+        return {"trigger_id": trigger_id, "enabled": True}
+
+    @app.post("/automation/triggers/{trigger_id}/disable")
+    def post_automation_trigger_disable(trigger_id: str):
+        if trigger_id not in assistant.automation.triggers:
+            raise HTTPException(status_code=404, detail={"error": "trigger_not_found"})
+        assistant.set_automation_enabled(trigger_id, False)
+        return {"trigger_id": trigger_id, "enabled": False}
+
+    @app.post("/automation/tick")
+    def post_automation_tick():
+        """Manually fires any due schedule triggers, on demand, rather
+        than waiting for start_automation_ticker()'s background interval —
+        useful for a remote caller that wants to force a check right now,
+        or for testing a schedule trigger without waiting."""
+        return {"fired": assistant.automation_tick()}
 
     @app.get("/auth/keys")
     def get_auth_keys():

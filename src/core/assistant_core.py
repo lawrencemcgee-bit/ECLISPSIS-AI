@@ -146,6 +146,7 @@ class AssistantCore:
         from src.services.coding_service import CodingService
         from src.services.social_content_service import SocialContentService
         from src.services.creative_content_service import CreativeContentService
+        from src.services.browser_service import BrowserService
 
         from src.agents.onenote_agent import OneNoteAgent
         from src.agents.weather_agent import WeatherAgent
@@ -153,6 +154,7 @@ class AssistantCore:
         from src.agents.coding_agent import CodingAgent
         from src.agents.social_agent import SocialAgent
         from src.agents.creative_agent import CreativeAgent
+        from src.agents.browser_agent import BrowserAgent
 
         self.agents.registry.register("onenote", OneNoteAgent(OneNoteService()))
         self.agents.registry.register("weather", WeatherAgent(WeatherService()))
@@ -160,8 +162,9 @@ class AssistantCore:
         self.agents.registry.register("coding", CodingAgent(CodingService()))
         self.agents.registry.register("social", SocialAgent(SocialContentService()))
         self.agents.registry.register("creative", CreativeAgent(CreativeContentService()))
+        self.agents.registry.register("browser", BrowserAgent(BrowserService()))
 
-        self.logger.info("agents.registered", {"agents": ["onenote", "weather", "news", "coding", "social", "creative"]})
+        self.logger.info("agents.registered", {"agents": ["onenote", "weather", "news", "coding", "social", "creative", "browser"]})
 
     # ---------------------------------------------------------
     # Plugin manager

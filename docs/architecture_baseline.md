@@ -17,8 +17,8 @@ deleted. §9 is left below as a historical record of what was found and
 why, with that correction noted inline.
 
 **Tier 3 update**: `NCIService` and `VisionService` are no longer
-placeholder-level, and real `CodingAgent`/`SocialAgent` have been added
-(a browser agent was deliberately deferred) — see §7.
+placeholder-level, and real `CodingAgent`/`SocialAgent`/`CreativeAgent`/
+`BrowserAgent` have all been added — see §7.
 
 ## 1. Overview
 14-phase roadmap (0–13), all phases now have working code and passing
@@ -31,13 +31,12 @@ plumbing — event bus, agents, memory, permissions, observability,
 automation, a cross-platform API — not about the domain engines the
 original product vision describes. Real voice I/O, real NCI scoring,
 and a real vision pipeline have since been added on top of that
-plumbing (Tier 3), along with real Coding, Social, and Creative-content
-agents; a browser agent remains placeholder-level (deliberately
-deferred). See §7 and §11.
+plumbing (Tier 3), along with real Coding, Social, Creative-content,
+and Browser (fetch-and-read) agents. See §7 and §11.
 
 ## 2. Repository Structure
 ```
-src/agents/       — OneNote, Weather, News, Coding, Social, Creative agents + registry
+src/agents/       — OneNote, Weather, News, Coding, Social, Creative, Browser agents + registry
 src/api/          — FastAPI app factory (Phase 11)
 src/core/         — AssistantCore + all core services (event bus, memory,
                      permissions, verification, safety rules, observability,
@@ -90,16 +89,17 @@ used starting Milestone 11 (request/response models in `src/api/api_app.py`).
 | Subsystem | Status |
 |---|---|
 | LocalEngine / ConversationService | Real, tested |
-| AgentRouter + 6 agents (OneNote/Weather/News/Coding/Social/Creative) | Real, tested. Coding is local static analysis (ast/difflib) — never executes code, respecting SafetyRules' permanent `run_shell_command` block. Social is local post analysis — no posting/publishing (no OAuth/API-key infra in this codebase). Creative is template/procedural generation (headlines, writing prompts, outlines) plus heuristic critique (passive voice, cliches, filler words) — no LLM anywhere in this codebase, so generation is assembled from fixed templates, not composed prose; see creative_content_service.py's module docstring. |
+| AgentRouter + 7 agents (OneNote/Weather/News/Coding/Social/Creative/Browser) | Real, tested. Coding is local static analysis (ast/difflib) — never executes code, respecting SafetyRules' permanent `run_shell_command` block. Social is local post analysis — no posting/publishing (no OAuth/API-key infra in this codebase). Creative is template/procedural generation (headlines, writing prompts, outlines) plus heuristic critique (passive voice, cliches, filler words) — no LLM anywhere in this codebase, so generation is assembled from fixed templates, not composed prose; see creative_content_service.py's module docstring. Browser fetches a single given URL and returns title/author/published/text/links — no JS execution, no crawling beyond that one page, no interpretation of what was fetched; see browser_service.py's module docstring. |
 | MemoryService | Real, tested (short + long-term, survives restart) |
 | PersistenceService | Real — settings, chat history, memory, permissions, automations all persisted as JSON |
 | VoiceService | Real STT (Vosk) + TTS (pyttsx3), confirmed working end-to-end — see `docs/voice_io_assessment.md`. Falls back to `simulate_command()` if the backend isn't available. |
 | VisionService | Real camera capture (OpenCV) with graceful fallback to the original simulated placeholder — see `vision_service.py`. Analysis is local pixel-level signals (brightness, sharpness, dominant channel), not ML object/scene recognition. |
 | AudioService | Simulated sine-wave samples, not real mic capture |
-| NCIService | Real local heuristic scorer — see `nci_service.py`. Scores quality (depth, evidence density, readability, vocabulary) always, plus topic relevance when a topic is supplied. Accepts raw text or a fetched URL. No external LLM call. |
+| NCIService | Real local heuristic scorer — see `nci_service.py`. Scores quality (depth, evidence density, readability, vocabulary) always, plus topic relevance when a topic is supplied. Accepts raw text or a fetched URL (via the shared `WebFetcher`, see below). No external LLM call. |
+| WebFetcher (`web_fetch.py`) | Real — shared requests+BeautifulSoup fetch/parse (title/author/published/text/links), extracted from NCIService's own URL-fetch logic during the browser-agent build so NCIService and BrowserService share one implementation instead of two. |
 | ObservabilityService (Milestone 9) | Real — event-driven counters, last-error, system metrics |
 | PermissionService / SafetyRules (Milestone 10) | Real — fail-closed by default, persisted grants |
-| Cross-platform API (Milestone 11) | Real for existing capabilities, including `/social/analyze`, `/coding/analyze`, `/coding/diff` as of Tier 3, plus `/nci/batch`, `/nci/latest`, `/vision/latest` (persisted history + batch scoring) — no `501` stubs remain among the original endpoint list. Every route requires an API key — see `ApiKeyService` below. |
+| Cross-platform API (Milestone 11) | Real for existing capabilities, including `/social/analyze`, `/coding/analyze`, `/coding/diff`, `/browser/fetch` as of Tier 3, plus `/nci/batch`, `/nci/latest`, `/vision/latest` (persisted history + batch scoring) and `/automation/triggers`/`/automation/tick` (automation management) — no `501` stubs remain among the original endpoint list. Every route requires an API key — see `ApiKeyService` below. |
 | AutomationService (Milestones 12–13) | Real — event/schedule triggers, persisted, ticked by a background thread in both entry points |
 
 ## 8. Concurrency & UI Thread Safety
@@ -191,11 +191,19 @@ afterward (72 passed / 7 skipped, same skip count as before).
   (`ruff.toml`, `mypy.ini`) were found, so both would run with defaults.
 
 ## 11. Known Limitations
-- Domain engines that remain placeholder-level: a browser agent
-  (fetch-and-read a URL) — deliberately deferred, not built. Everything
-  else from the original re-engineering prompt's domain-engine list
-  (real voice I/O, real NCI scoring, a real vision pipeline, real
-  Coding/Social/Creative agents) has shipped in Tier 3; see §7.
+- ~~Domain engines that remain placeholder-level: a browser agent
+  (fetch-and-read a URL)~~ — fixed in Tier 3. `BrowserAgent`/
+  `BrowserService` (`src/agents/browser_agent.py`,
+  `src/services/browser_service.py`) fetch a single given URL and
+  return its title/author/published/text/links — no JS execution, no
+  crawling beyond the one page requested, no interpretation of what
+  was fetched (feed the returned text into `assistant.analyze()` for
+  that). Built on a `WebFetcher` (`src/services/web_fetch.py`)
+  extracted from NCIService's own URL-fetch logic so both share one
+  implementation instead of two. Everything else from the original
+  re-engineering prompt's domain-engine list (real voice I/O, real NCI
+  scoring, a real vision pipeline, real Coding/Social/Creative agents)
+  had already shipped in Tier 3; see §7.
 - ~~No auth on the HTTP API~~ — fixed in Tier 3. Every route requires an
   `X-API-Key` header (src/api/api_key_service.py); a bootstrap key is
   generated and printed to stderr on first run, `/auth/keys` manages
@@ -220,21 +228,25 @@ afterward (72 passed / 7 skipped, same skip count as before).
   takes the rest of the batch down with it). See
   `AssistantCore.analyze_batch`/`get_latest_nci_reports`/
   `get_latest_vision_captures`.
-- No browser agent (URL fetch-and-read) — deliberately skipped when
-  Coding/Social/Creative agents were built; the NCI service already does
-  URL fetching internally (`_fetch_url`) but there's no standalone agent
-  exposing that as a general-purpose capability.
+- ~~No HTTP API endpoints for registering/listing/managing
+  automations~~ — fixed in Tier 3. `/automation/triggers` (GET, list),
+  `/automation/triggers/event` and `/automation/triggers/schedule`
+  (POST, register), `/automation/triggers/{id}` (DELETE),
+  `/automation/triggers/{id}/enable`/`disable` (POST), and
+  `/automation/tick` (POST, manual fire) are thin passthroughs to the
+  same `AssistantCore` methods QML/Flet already called in-process — no
+  new automation logic. Deliberately excluded from the HTTP surface: a
+  trigger's `predicate` (a Python callable, not JSON-serializable), so
+  event triggers registered over HTTP are always unfiltered. Action
+  dicts are passed through unvalidated at registration, same as the
+  in-process API — a malformed action only surfaces as a failure when
+  the trigger fires, not when it's registered. See
+  `src/api/api_app.py`'s module docstring.
 - Creative-content generation is template/procedural (fixed headline
   templates, curated writing-prompt word lists, fixed outline
   structures per content type), not composed prose — there's no LLM
   anywhere in this codebase, by design. See
   `creative_content_service.py`'s module docstring.
-- No HTTP API endpoints exist yet for registering/listing/managing
-  automations (`register_schedule_automation` etc. are AssistantCore
-  methods, callable in-process from QML/Flet, but not exposed over
-  `/automations/*`) — pre-existing gap, not introduced by the
-  `sequence` action type, but worth flagging since automation is
-  otherwise now fully HTTP-API-authenticated territory (§7).
 - Flet packaging (`flet build`) is configured but not actually
   compiled anywhere in this repo's history — see `docs/flet_packaging.md`.
   Two dedicated entry points (`nova_main.py`, `lyra_main.py`) exist and
@@ -250,23 +262,27 @@ afterward (72 passed / 7 skipped, same skip count as before).
 The original 14-phase roadmap (Milestones 0–13) is complete, the Tier 2
 repo-hygiene pass is done, and Lyra has been brought to feature parity
 with Nova. Tier 3 has shipped real NCI scoring, a real vision pipeline,
-real Coding/Social/Creative agents (`coding_service.py`,
+real Coding/Social/Creative/Browser agents (`coding_service.py`,
 `ast`/`difflib`-based, no execution; `social_content_service.py`, local
 post analysis, no posting; `creative_content_service.py`,
-template/procedural generation + heuristic critique, no LLM), API-key
-auth on the HTTP API (`api_key_service.py`), multi-step (`sequence`)
-automation actions, Flet packaging configuration (`nova_main.py`,
-`lyra_main.py`, `docs/flet_packaging.md` — commands verified to parse
-and initialize correctly; the actual compile still needs to run on a
-machine that can reach the Flutter SDK, since this project's sandbox
-couldn't), persisted batch/history endpoints for NCI and vision
-(`/nci/batch`, `/nci/latest`, `/vision/latest`), and a hands-on live
-launch test of Lyra (§13 — real server boot, real session/websocket
-handshake, real rendered UI, zero errors). What remains: a browser
-agent, HTTP endpoints for automation management, and actually running
-the Flet build commands on a real machine to confirm they produce a
-working artifact end-to-end. These don't have phase numbers yet — worth
-a fresh planning pass to sequence them.
+template/procedural generation + heuristic critique, no LLM;
+`browser_service.py`, single-page fetch-and-read via the shared
+`web_fetch.py`, no crawling/JS/interpretation), API-key auth on the
+HTTP API (`api_key_service.py`), multi-step (`sequence`) automation
+actions, Flet packaging configuration (`nova_main.py`, `lyra_main.py`,
+`docs/flet_packaging.md` — commands verified to parse and initialize
+correctly; the actual compile still needs to run on a machine that can
+reach the Flutter SDK, since this project's sandbox couldn't),
+persisted batch/history endpoints for NCI and vision (`/nci/batch`,
+`/nci/latest`, `/vision/latest`), HTTP endpoints for automation
+management (`/automation/triggers` and friends — thin passthroughs to
+existing `AssistantCore` methods, no new automation logic), and a
+hands-on live launch test of Lyra (§13 — real server boot, real
+session/websocket handshake, real rendered UI, zero errors). What
+remains: actually running the Flet build commands on a real machine to
+confirm they produce a working artifact end-to-end — the only item
+left from the original Tier 3 scoping that hasn't shipped. That
+doesn't have a phase number yet.
 
 ## 13. Lyra Live Launch Verification (Tier 3)
 Prior "Lyra parity" work (Tier 2) confirmed Lyra's app factory

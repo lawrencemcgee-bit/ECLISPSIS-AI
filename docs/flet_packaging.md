@@ -76,20 +76,28 @@ dev-only) is what a packaged/served app uses.
   revisit if mobile packaging is actually wanted later.
 
 ## Why this couldn't be finished in this session
-Verified directly rather than assumed: `flet build linux` was run in
-the sandbox this work happened in. It got all the way through argument
-parsing, target validation, and project initialization — confirming
+Verified directly rather than assumed, twice now — most recently on
+2026-08-13: `flet build linux` was run in the sandbox this work
+happened in. It got all the way through argument parsing, target
+validation, and project initialization — confirming
 `nova_main.py`/`lyra_main.py` and the command-line flags above are
-correctly configured — before failing at Flutter SDK acquisition, which
-needs `storage.googleapis.com` (blocked by that sandbox's network
-policy). Manually seeding the Flutter SDK via `git clone` from GitHub
-(which was reachable) got one step further, but Flutter's own engine
-artifact precache step (`flutter precache --linux`) also needs a
-googleapis.com-hosted CDN and failed the same way. Both are genuine
-network-egress restrictions specific to that sandboxed environment, not
-a problem with the app config — a normal developer machine with regular
-internet access should complete the build commands above without
-hitting either wall.
+correctly configured — before failing at Flutter SDK acquisition
+(`storage.googleapis.com`, `HTTP 403`). Checking directly: the
+sandbox's egress proxy returns `x-deny-reason: host_not_allowed` for
+that host — a network-egress allowlist, not a transient failure or an
+app config problem.
+
+Manually seeding the Flutter SDK via `git clone` from GitHub (which
+*is* reachable) got one step further, past SDK acquisition — but
+`flutter precache --linux` then needs the engine artifacts (Dart SDK,
+native binaries) from the same `storage.googleapis.com`-hosted CDN and
+hit the identical wall (a truncated/corrupt-looking download rather
+than a clean HTTP error this time, but the same `host_not_allowed`
+proxy response underneath). Both attempts confirm this is a
+sandbox-specific network-egress restriction that would not affect a
+normal developer machine with regular internet access — `storage.
+googleapis.com` isn't an unusual or blocked host in general, just not
+on this environment's allowlist.
 
 ## Icons / branding
 No custom icon or splash screen has been configured yet — `flet build`

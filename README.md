@@ -147,7 +147,7 @@ python -m unittest test_all_phases.Phase9Observability -v
 | Plugins | Real (discovery, enable/disable, execution) |
 | Permissions & safety policy | Real — fails closed by default, decisions persist |
 | Observability (metrics, diagnostics, health) | Real |
-| Automation (event & schedule triggers) | Real — persists, ticked by a background thread; supports multi-step `sequence` actions (steps of any action type, including nested sequences) |
+| Automation (event & schedule triggers) | Real — persists, ticked by a background thread; supports multi-step `sequence` actions (steps of any action type, including nested sequences); manageable over HTTP (`/automation/triggers/*`, `/automation/tick`), not just in-process |
 | Cross-platform HTTP API | Real for the above; API-key auth on every route (`X-API-Key`, see `src/api/api_key_service.py`); explicit `501`s for capabilities that don't exist yet (see below) |
 | Flet UI (Nova) | Real — chat, agent tray, mic/camera, reactive orb; window-restore-across-restart not yet confirmed |
 | Flet packaging (`flet build`) | Configured (`nova_main.py`, `lyra_main.py`) and validated up to Flutter SDK acquisition — see `docs/flet_packaging.md` for exact commands and what's still needed on your machine to finish it |
@@ -157,7 +157,7 @@ python -m unittest test_all_phases.Phase9Observability -v
 | NCI (content analysis/scoring) | **Real local heuristic scorer** — quality (depth/evidence/readability/vocabulary) always, topic relevance when a topic is given; accepts raw text or a fetched URL; results persisted, `/nci/batch` and `/nci/latest` real |
 | Coding agent | **Real local static analysis** (`ast`/`difflib`) — syntax, structure, docstring coverage, diffing; never executes code |
 | Social-media agent | **Real local post analysis** — length vs. platform limits, hashtags/mentions/links, engagement heuristics; no posting/publishing (no OAuth infra) |
-| Browser agent | Does not exist yet — deliberately deferred |
+| Browser agent | **Real single-page fetch-and-read** (shared `WebFetcher`, same fetch logic NCI's URL scoring uses) — title/author/published/text/links; no JS execution, no crawling beyond the one URL given, no interpretation of what was fetched |
 | Creative-content generation | **Real template/procedural generation** (headlines, writing prompts, outlines) + heuristic critique (passive voice, cliches, filler words) — no LLM anywhere in this codebase |
 
 ## Project Structure
@@ -225,15 +225,15 @@ Flet UI migration (Nova and Lyra both built and at feature parity, Lyra
 confirmed via a real live launch test — see
 `docs/architecture_baseline.md` §13), real voice I/O (confirmed working
 end-to-end), real NCI scoring, a real vision pipeline, real
-Coding/Social/Creative agents, API-key auth on the HTTP API, multi-step
-(`sequence`) automation actions, Flet packaging configuration
-(`nova_main.py`/`lyra_main.py` + `docs/flet_packaging.md` — build
-commands verified to parse/initialize correctly; the actual native
-compile needs to run on a machine that can reach the Flutter SDK), and
-persisted batch/history endpoints for NCI and vision (`/nci/batch`,
-`/nci/latest`, `/vision/latest`) — all shipped in Tier 3. Still
-unbuilt/unrun: a browser agent (deliberately deferred), HTTP endpoints
-for automation management, and actually executing the Flet build
-commands on a machine with full internet access. See
-`docs/architecture_baseline.md` §11–13 for the full known-limitations
-list.
+Coding/Social/Creative/Browser agents, API-key auth on the HTTP API,
+multi-step (`sequence`) automation actions, Flet packaging
+configuration (`nova_main.py`/`lyra_main.py` + `docs/flet_packaging.md`
+— build commands verified to parse/initialize correctly; the actual
+native compile needs to run on a machine that can reach the Flutter
+SDK), persisted batch/history endpoints for NCI and vision
+(`/nci/batch`, `/nci/latest`, `/vision/latest`), and HTTP endpoints for
+automation management (`/automation/triggers/*`, `/automation/tick`) —
+all shipped in Tier 3. Still unbuilt/unrun: actually executing the Flet
+build commands on a machine with full internet access — the last item
+left from Tier 3's scope. See `docs/architecture_baseline.md` §11–13
+for the full known-limitations list.
